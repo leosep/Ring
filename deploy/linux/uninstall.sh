@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
-# Desinstala RingControl en Linux. Conserva las grabaciones salvo --purge-recordings.
+# Uninstalls RingControl on Linux. Recordings are kept unless --purge-recordings.
 #
 #   sudo ./uninstall.sh
 #   ./uninstall.sh --user
-#   sudo ./uninstall.sh --purge          # borra también configuración y sesión
+#   sudo ./uninstall.sh --purge          # also deletes the configuration and session
 #
 set -euo pipefail
 
@@ -16,14 +16,14 @@ PURGE_RECORDINGS=0
 
 usage() {
     cat <<'EOF'
-Uso: uninstall.sh [opciones]
+Usage: uninstall.sh [options]
 
-  --user                Desinstala la instalación de usuario (systemd --user)
-  --system              Fuerza la desinstalación del servicio del sistema
-  --prefix <ruta>       Carpeta de instalación usada al instalar
-  --purge               Elimina también la configuración y la sesión de Ring
-  --purge-recordings    Elimina también las grabaciones (¡irreversible!)
-  -h, --help            Muestra esta ayuda
+  --user                Uninstall the user installation (systemd --user)
+  --system              Force removal of the system service
+  --prefix <path>       Installation folder used when installing
+  --purge               Also delete the configuration and the Ring session
+  --purge-recordings    Also delete the recordings (irreversible!)
+  -h, --help            Show this help
 EOF
 }
 
@@ -31,11 +31,11 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --user) MODE="user" ;;
         --system) MODE="system" ;;
-        --prefix) PREFIX="${2:?falta la ruta}"; shift ;;
+        --prefix) PREFIX="${2:?missing path}"; shift ;;
         --purge) PURGE=1 ;;
         --purge-recordings) PURGE_RECORDINGS=1 ;;
         -h|--help) usage; exit 0 ;;
-        *) echo "Opción desconocida: $1" >&2; usage; exit 2 ;;
+        *) echo "Unknown option: $1" >&2; usage; exit 2 ;;
     esac
     shift
 done
@@ -45,7 +45,7 @@ if [ "$MODE" = "auto" ]; then
 fi
 
 if [ "$MODE" = "system" ] && [ "$(id -u)" -ne 0 ]; then
-    echo "Ejecuta con sudo para desinstalar el servicio del sistema." >&2
+    echo "Run with sudo to uninstall the system service." >&2
     exit 1
 fi
 
@@ -65,7 +65,7 @@ fi
 CONFIG_DIR="$TARGET_HOME/.config/ringcontrol"
 RECORDINGS="$TARGET_HOME/Videos/RingControl"
 
-echo "==> Deteniendo el servicio"
+echo "==> Stopping the service"
 if [ "$MODE" = "system" ]; then
     systemctl stop "$SERVICE" 2>/dev/null || true
     systemctl disable "$SERVICE" 2>/dev/null || true
@@ -78,23 +78,23 @@ else
     systemctl --user daemon-reload 2>/dev/null || true
 fi
 
-echo "==> Eliminando archivos"
+echo "==> Removing files"
 rm -rf "$PREFIX"
 if [ -L "$BIN_LINK" ] || [ -f "$BIN_LINK" ]; then
     rm -f "$BIN_LINK"
 fi
 
 if [ "$PURGE" = "1" ]; then
-    echo "==> Eliminando configuración y sesión"
+    echo "==> Removing the configuration and session"
     rm -rf "$CONFIG_DIR"
 fi
 
 if [ "$PURGE_RECORDINGS" = "1" ]; then
-    echo "==> Eliminando grabaciones en $RECORDINGS"
+    echo "==> Removing recordings in $RECORDINGS"
     rm -rf "$RECORDINGS"
 else
-    echo "==> Las grabaciones se conservan en $RECORDINGS"
+    echo "==> Recordings are kept in $RECORDINGS"
 fi
 
 echo ""
-echo "RingControl desinstalado."
+echo "RingControl uninstalled."

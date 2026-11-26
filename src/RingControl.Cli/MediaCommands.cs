@@ -12,8 +12,8 @@ internal static class MediaCommands
         using var session = CliSession.Open();
         var device = session.ResolveDevice(args.First);
 
-        Ui.Header($"Instantánea · {device.Name}");
-        Ui.Info("Solicitando imagen a la cámara…");
+        Ui.Header($"Snapshot · {device.Name}");
+        Ui.Info("Requesting an image from the camera…");
 
         byte[]? bytes;
         try
@@ -28,7 +28,7 @@ internal static class MediaCommands
 
         if (bytes is null || bytes.Length == 0)
         {
-            throw new CliException("Ring no devolvió ninguna instantánea. Inténtalo de nuevo en unos segundos.");
+            throw new CliException("Ring did not return a snapshot. Try again in a few seconds.");
         }
 
         var path = args.Get("out");
@@ -36,7 +36,7 @@ internal static class MediaCommands
         {
             var folder = Path.Combine(PlatformPaths.DataDirectory, "snapshots");
             path = Path.Combine(folder,
-                $"{NvrStorage.SafeName(device.Name, "camara")}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.jpg");
+                $"{NvrStorage.SafeName(device.Name, "camera")}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.jpg");
         }
 
         path = Path.GetFullPath(path);
@@ -47,7 +47,7 @@ internal static class MediaCommands
         }
 
         await File.WriteAllBytesAsync(path, bytes).ConfigureAwait(false);
-        Ui.Success($"Guardada: {path} ({NvrStorage.FormatBytes(bytes.Length)})");
+        Ui.Success($"Saved: {path} ({NvrStorage.FormatBytes(bytes.Length)})");
         return 0;
     }
 
@@ -68,8 +68,8 @@ internal static class MediaCommands
         using var session = CliSession.Open();
         var device = session.ResolveDevice(args.First);
 
-        Ui.Header($"Grabación manual · {device.Name}");
-        Ui.Info($"Duración: {seconds} s · Carpeta: {storage.Root}");
+        Ui.Header($"Manual recording · {device.Name}");
+        Ui.Info($"Duration: {seconds} s · Folder: {storage.Root}");
 
         var interactive = !Console.IsOutputRedirected;
         var lastDraw = DateTimeOffset.MinValue;
@@ -104,16 +104,16 @@ internal static class MediaCommands
 
         if (!ok)
         {
-            throw new CliException("No se pudo iniciar la grabación (¿ya hay otra en curso?).");
+            throw new CliException("Could not start recording (is another one already running?).");
         }
 
         var clip = storage.ListClips(device.Id).OrderByDescending(c => c.StartedAt).FirstOrDefault();
         if (clip is null)
         {
-            throw new CliException("La grabación no produjo ningún archivo. Revisa la conexión de la cámara.");
+            throw new CliException("The recording did not produce any file. Check the camera connection.");
         }
 
-        Ui.Success($"Guardado: {clip.FilePath}");
+        Ui.Success($"Saved: {clip.FilePath}");
         Ui.Info($"{clip.DurationLabel} · {clip.SizeLabel} · {clip.Width}x{clip.Height} · {clip.FramesPerSecond:0.##} fps");
         return 0;
     }
@@ -131,7 +131,7 @@ internal static class MediaCommands
         if (args.Has("prune"))
         {
             var removed = storage.EnforceRetention(options);
-            Ui.Success($"Retención aplicada: {removed} grabación(es) eliminadas.");
+            Ui.Success($"Retention applied: {removed} recording(s) deleted.");
         }
 
         var clips = storage.ListClips(deviceId);
@@ -149,14 +149,14 @@ internal static class MediaCommands
             return Task.FromResult(0);
         }
 
-        Ui.Header($"Grabaciones ({clips.Count})");
-        Ui.Info($"Carpeta: {storage.Root}");
-        Ui.Info($"Total: {usage.ClipCount} clips · {usage.SizeLabel} · libre {usage.FreeLabel}");
+        Ui.Header($"Recordings ({clips.Count})");
+        Ui.Info($"Folder: {storage.Root}");
+        Ui.Info($"Total: {usage.ClipCount} clips · {usage.SizeLabel} · free {usage.FreeLabel}");
         Ui.Blank();
 
         if (clips.Count == 0)
         {
-            Ui.Info("Todavía no hay grabaciones.");
+            Ui.Info("No recordings yet.");
             return Task.FromResult(0);
         }
 
@@ -173,12 +173,12 @@ internal static class MediaCommands
             })
             .ToList();
 
-        Ui.Table(rows, "Fecha", "Cámara", "Tipo", "Duración", "Tamaño", "Archivo");
+        Ui.Table(rows, "Date", "Camera", "Type", "Duration", "Size", "File");
 
         if (clips.Count > 200)
         {
             Ui.Blank();
-            Ui.Info($"Mostrando las 200 más recientes de {clips.Count}. Usa --json para el listado completo.");
+            Ui.Info($"Showing the 200 most recent of {clips.Count}. Use --json for the full list.");
         }
 
         return Task.FromResult(0);

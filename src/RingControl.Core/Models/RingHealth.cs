@@ -12,36 +12,36 @@ public sealed class RingHealth
     {
         ["firmware_version"] = "Firmware",
         ["firmware"] = "Firmware",
-        ["wifi_name"] = "Red Wi-Fi",
-        ["wifi_rssi"] = "Señal Wi-Fi (RSSI)",
-        ["wifi_rssi_category"] = "Calidad Wi-Fi",
-        ["latest_signal_strength"] = "Señal Wi-Fi (última)",
-        ["latest_signal_category"] = "Calidad de señal (última)",
-        ["average_signal_strength"] = "Señal Wi-Fi (media)",
-        ["average_signal_category"] = "Calidad de señal (media)",
-        ["wifi_is_ring_network"] = "Red de Ring",
-        ["packet_loss_strength"] = "Pérdida de paquetes",
-        ["packet_loss_category"] = "Calidad de paquetes",
-        ["updated_at"] = "Última actualización",
-        ["battery_percentage"] = "Batería",
-        ["battery_percentage_category"] = "Estado de batería",
-        ["battery_voltage"] = "Voltaje de batería",
-        ["battery_voltage_category"] = "Estado del voltaje",
-        ["external_connection"] = "Alimentación externa",
-        ["transformer_voltage"] = "Voltaje del transformador",
-        ["transformer_voltage_category"] = "Estado del transformador",
-        ["ext_power_state"] = "Estado de alimentación",
-        ["temperature"] = "Temperatura",
-        ["network_connection"] = "Conexión de red",
-        ["connection_status"] = "Estado de conexión",
-        ["ip_address"] = "Dirección IP",
-        ["mac_address"] = "Dirección MAC",
-        ["signal_strength"] = "Intensidad de señal",
-        ["packet_loss"] = "Pérdida de paquetes",
-        ["ping"] = "Latencia",
-        ["uptime"] = "Tiempo encendido",
-        ["last_update"] = "Última actualización",
-        ["device_id"] = "ID del dispositivo",
+        ["wifi_name"] = "Wi-Fi network",
+        ["wifi_rssi"] = "Wi-Fi signal (RSSI)",
+        ["wifi_rssi_category"] = "Wi-Fi quality",
+        ["latest_signal_strength"] = "Wi-Fi signal (latest)",
+        ["latest_signal_category"] = "Signal quality (latest)",
+        ["average_signal_strength"] = "Wi-Fi signal (average)",
+        ["average_signal_category"] = "Signal quality (average)",
+        ["wifi_is_ring_network"] = "Ring network",
+        ["packet_loss_strength"] = "Packet loss",
+        ["packet_loss_category"] = "Packet quality",
+        ["updated_at"] = "Last updated",
+        ["battery_percentage"] = "Battery",
+        ["battery_percentage_category"] = "Battery status",
+        ["battery_voltage"] = "Battery voltage",
+        ["battery_voltage_category"] = "Voltage status",
+        ["external_connection"] = "External power",
+        ["transformer_voltage"] = "Transformer voltage",
+        ["transformer_voltage_category"] = "Transformer status",
+        ["ext_power_state"] = "Power state",
+        ["temperature"] = "Temperature",
+        ["network_connection"] = "Network connection",
+        ["connection_status"] = "Connection status",
+        ["ip_address"] = "IP address",
+        ["mac_address"] = "MAC address",
+        ["signal_strength"] = "Signal strength",
+        ["packet_loss"] = "Packet loss",
+        ["ping"] = "Latency",
+        ["uptime"] = "Uptime",
+        ["last_update"] = "Last updated",
+        ["device_id"] = "Device ID",
     };
 
     public List<HealthItem> Items { get; } = new();
@@ -119,18 +119,18 @@ public sealed class RingHealth
         if (key.Equals("firmware", StringComparison.OrdinalIgnoreCase) ||
             key.Equals("firmware_version", StringComparison.OrdinalIgnoreCase))
         {
-            return value.Equals("Up to Date", StringComparison.OrdinalIgnoreCase) ? "Actualizado" : value;
+            return value.Equals("Up to Date", StringComparison.OrdinalIgnoreCase) ? "Up to date" : value;
         }
 
         if (key.EndsWith("_category", StringComparison.OrdinalIgnoreCase))
         {
             return value.ToLowerInvariant() switch
             {
-                "best" => "Excelente",
-                "good" => "Buena",
-                "okay" => "Correcta",
-                "poor" => "Mala",
-                "unknown" => "Desconocido",
+                "best" => "Excellent",
+                "good" => "Good",
+                "okay" => "Fair",
+                "poor" => "Poor",
+                "unknown" => "Unknown",
                 _ => value,
             };
         }
@@ -144,7 +144,7 @@ public sealed class RingHealth
         {
             if (value.TryGetValue<bool>(out var flag))
             {
-                return flag ? "Sí" : "No";
+                return flag ? "Yes" : "No";
             }
 
             if (value.TryGetValue<double>(out var number))

@@ -34,7 +34,7 @@ public sealed class VlcService : IDisposable
         catch (Exception ex)
         {
             InitError = ex.Message;
-            AppLog.Error("LibVLC no se pudo inicializar", ex);
+            AppLog.Error("LibVLC could not be initialised", ex);
         }
     }
 
@@ -50,12 +50,12 @@ public sealed class VlcService : IDisposable
     {
         if (LibVlc is null)
         {
-            throw new InvalidOperationException("LibVLC no está disponible.");
+            throw new InvalidOperationException("LibVLC is not available.");
         }
 
         if (!File.Exists(h264Path))
         {
-            throw new FileNotFoundException("No se encontró la grabación.", h264Path);
+            throw new FileNotFoundException("Recording not found.", h264Path);
         }
 
         var mp4Path = Path.ChangeExtension(h264Path, ".mp4");
@@ -86,11 +86,11 @@ public sealed class VlcService : IDisposable
         player.EndReached += (_, _) => completion.TrySetResult(true);
         player.Stopped += (_, _) => completion.TrySetResult(true);
         player.EncounteredError += (_, _) =>
-            completion.TrySetException(new InvalidOperationException("VLC no pudo convertir la grabación."));
+            completion.TrySetException(new InvalidOperationException("VLC could not convert the recording."));
 
         if (!player.Play())
         {
-            throw new InvalidOperationException("VLC no pudo abrir la grabación.");
+            throw new InvalidOperationException("VLC could not open the recording.");
         }
 
         await using var registration = ct.Register(() =>
@@ -112,7 +112,7 @@ public sealed class VlcService : IDisposable
         var info = new FileInfo(mp4Path);
         if (!info.Exists || info.Length == 0)
         {
-            throw new InvalidOperationException("VLC no generó el archivo MP4.");
+            throw new InvalidOperationException("VLC did not create the MP4 file.");
         }
 
         return mp4Path;

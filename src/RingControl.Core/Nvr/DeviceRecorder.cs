@@ -46,11 +46,11 @@ public sealed record DeviceRecorderStatus(
 {
     public string StateLabel => State switch
     {
-        DeviceRecorderState.Connecting => "Conectando",
-        DeviceRecorderState.Recording => "Grabando",
-        DeviceRecorderState.Backoff => "Reintentando",
+        DeviceRecorderState.Connecting => "Connecting",
+        DeviceRecorderState.Recording => "Recording",
+        DeviceRecorderState.Backoff => "Retrying",
         DeviceRecorderState.Error => "Error",
-        _ => "Detenido",
+        _ => "Stopped",
     };
 }
 
@@ -78,7 +78,7 @@ public sealed class DeviceRecorder : IAsyncDisposable
     private int _clipsRecorded;
     private DateTimeOffset? _lastClipAt;
     private DeviceRecorderState _state = DeviceRecorderState.Stopped;
-    private string _message = "Detenido";
+    private string _message = "Stopped";
 
     public DeviceRecorder(RingApiClient api, RingDevice device, NvrOptions options, NvrStorage storage, Action<string>? log = null)
     {
@@ -237,7 +237,7 @@ public sealed class DeviceRecorder : IAsyncDisposable
         cts?.Dispose();
         await CloseClipAsync().ConfigureAwait(false);
         await CloseStreamAsync().ConfigureAwait(false);
-        SetState(DeviceRecorderState.Stopped, "Detenido");
+        SetState(DeviceRecorderState.Stopped, "Stopped");
     }
 
     private async Task RunAsync(CancellationToken ct)
@@ -259,7 +259,7 @@ public sealed class DeviceRecorder : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            Log("Bucle de grabación detenido: " + ex);
+            Log("Recording loop stopped: " + ex);
             SetState(DeviceRecorderState.Error, "Error: " + ex.Message);
         }
         finally
@@ -313,7 +313,7 @@ public sealed class DeviceRecorder : IAsyncDisposable
                     }
                     else if (DateTimeOffset.UtcNow - _lastPacketAt > TimeSpan.FromSeconds(20))
                     {
-                        Log("La cámara dejó de enviar vídeo; se reconectará.");
+                        Log("The camera stopped sending video; reconnecting.");
                         _streamFailed = true;
                     }
                 }
@@ -327,8 +327,8 @@ public sealed class DeviceRecorder : IAsyncDisposable
             }
             catch (Exception ex)
             {
-                Log("Error en la grabación continua: " + ex.Message);
-                SetState(DeviceRecorderState.Backoff, "Reintentando en " + (int)backoff.TotalSeconds + " s: " + ex.Message);
+                Log("Continuous recording error: " + ex.Message);
+                SetState(DeviceRecorderState.Backoff, "Retrying in " + (int)backoff.TotalSeconds + " s: " + ex.Message);
                 await CloseClipAsync().ConfigureAwait(false);
                 await CloseStreamAsync().ConfigureAwait(false);
 
@@ -393,7 +393,7 @@ public sealed class DeviceRecorder : IAsyncDisposable
                 if (trigger is not null)
                 {
                     var kind = TriggerFor(trigger);
-                    Log($"Evento {trigger.KindLabel} ({trigger.Id}); grabando {Options.EventClipSeconds} s.");
+                    Log($"Event {trigger.KindLabel} ({trigger.Id}); recording {Options.EventClipSeconds} s.");
                     await RecordClipAsync(TimeSpan.FromSeconds(Options.EventClipSeconds), kind, trigger.Id, ct).ConfigureAwait(false);
                 }
 
@@ -405,8 +405,8 @@ public sealed class DeviceRecorder : IAsyncDisposable
             }
             catch (Exception ex)
             {
-                Log("Error consultando eventos: " + ex.Message);
-                SetState(DeviceRecorderState.Backoff, "Reintentando en " + (int)backoff.TotalSeconds + " s");
+                Log("Error polling events: " + ex.Message);
+                SetState(DeviceRecorderState.Backoff, "Retrying in " + (int)backoff.TotalSeconds + " s");
                 await CloseClipAsync().ConfigureAwait(false);
                 await CloseStreamAsync().ConfigureAwait(false);
 
@@ -442,7 +442,7 @@ public sealed class DeviceRecorder : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            Log("No se pudieron leer los eventos iniciales: " + ex.Message);
+            Log("Could not read the initial events: " + ex.Message);
         }
     }
 
@@ -498,7 +498,7 @@ public sealed class DeviceRecorder : IAsyncDisposable
             {
                 // The desktop is watching the camera with its own Ring session; opening a
                 // second one would fail. Skip this event instead of fighting for the device.
-                Log("Se omite la grabación del evento: hay una vista en directo activa.");
+                Log("Skipping event recording: a live view is active.");
                 return;
             }
 
@@ -529,7 +529,7 @@ public sealed class DeviceRecorder : IAsyncDisposable
 
                 if (DateTimeOffset.UtcNow - _lastPacketAt > TimeSpan.FromSeconds(20))
                 {
-                    Log("La cámara dejó de enviar vídeo durante el evento.");
+                    Log("The camera stopped sending video during the event.");
                     break;
                 }
             }
@@ -551,7 +551,7 @@ public sealed class DeviceRecorder : IAsyncDisposable
         }
 
         _streamFailed = false;
-        SetState(DeviceRecorderState.Connecting, "Conectando con la cámara…");
+        SetState(DeviceRecorderState.Connecting, "Connecting to the camera…");
 
         var stream = new RingLiveStream(_api, Device, Log);
         stream.StatusChanged += OnStreamStatusChanged;
@@ -563,7 +563,7 @@ public sealed class DeviceRecorder : IAsyncDisposable
         }
 
         await stream.StartAsync(ct).ConfigureAwait(false);
-        Log("Sesión de vídeo iniciada.");
+        Log("Video session started.");
 
         if (_previewWanted)
         {
@@ -580,7 +580,7 @@ public sealed class DeviceRecorder : IAsyncDisposable
 
         if (stream.PacketCount == 0)
         {
-            throw new TimeoutException("La cámara no envió vídeo a tiempo.");
+            throw new TimeoutException("The camera did not send video in time.");
         }
     }
 
@@ -625,7 +625,7 @@ public sealed class DeviceRecorder : IAsyncDisposable
         if (e.State == LiveStreamState.Failed)
         {
             _streamFailed = true;
-            Log("Sesión de vídeo con error: " + e.Message);
+            Log("Video session error: " + e.Message);
         }
         else if (e.State is LiveStreamState.Streaming or LiveStreamState.WaitingForVideo)
         {
@@ -647,7 +647,7 @@ public sealed class DeviceRecorder : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            Log("Error escribiendo vídeo: " + ex.Message);
+            Log("Error writing video: " + ex.Message);
         }
     }
 
@@ -678,7 +678,7 @@ public sealed class DeviceRecorder : IAsyncDisposable
         }
 
         _lastPacketAt = DateTimeOffset.UtcNow;
-        SetState(DeviceRecorderState.Recording, "Grabando " + Path.GetFileName(path));
+        SetState(DeviceRecorderState.Recording, "Recording " + Path.GetFileName(path));
         await Task.CompletedTask;
     }
 
@@ -706,7 +706,7 @@ public sealed class DeviceRecorder : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            Log("No se pudo cerrar el archivo de vídeo: " + ex.Message);
+            Log("Could not close the video file: " + ex.Message);
         }
 
         clip.EndedAt = DateTimeOffset.Now;
@@ -732,7 +732,7 @@ public sealed class DeviceRecorder : IAsyncDisposable
         {
             clip.Complete = false;
             _storage.Delete(clip);
-            Log("Se descartó una grabación vacía: " + Path.GetFileName(clip.FilePath));
+            Log("Discarded an empty recording: " + Path.GetFileName(clip.FilePath));
         }
         else
         {
@@ -740,10 +740,10 @@ public sealed class DeviceRecorder : IAsyncDisposable
             clip.Save();
             _clipsRecorded++;
             _lastClipAt = clip.EndedAt;
-            Log($"Grabación guardada: {Path.GetFileName(clip.FilePath)} ({clip.DurationLabel}, {clip.SizeLabel}).");
+            Log($"Recording saved: {Path.GetFileName(clip.FilePath)} ({clip.DurationLabel}, {clip.SizeLabel}).");
         }
 
-        SetState(DeviceRecorderState.Stopped, "Esperando…");
+        SetState(DeviceRecorderState.Stopped, "Waiting…");
         await Task.CompletedTask;
     }
 

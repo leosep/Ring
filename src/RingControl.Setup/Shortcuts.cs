@@ -25,7 +25,7 @@ internal static class Shortcuts
             }
 
             var shellType = Type.GetTypeFromProgID("WScript.Shell")
-                            ?? throw new InvalidOperationException("WScript.Shell no está disponible en este sistema.");
+                            ?? throw new InvalidOperationException("WScript.Shell is not available on this system.");
 
             dynamic shell = Activator.CreateInstance(shellType)!;
             dynamic shortcut = shell.CreateShortcut(linkPath);
@@ -64,7 +64,7 @@ internal static class Shortcuts
 
         if (error is not null)
         {
-            throw new InvalidOperationException("No se pudo crear el acceso directo: " + error.Message, error);
+            throw new InvalidOperationException("Could not create the shortcut: " + error.Message, error);
         }
     }
 }

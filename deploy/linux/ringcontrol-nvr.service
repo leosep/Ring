@@ -1,5 +1,5 @@
 [Unit]
-Description=RingControl NVR (grabación de cámaras y timbres Ring)
+Description=RingControl NVR (Ring camera and doorbell recording)
 Documentation=https://github.com/leosep/Ring
 After=network-online.target
 Wants=network-online.target

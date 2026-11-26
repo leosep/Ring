@@ -1,7 +1,7 @@
 ﻿<Window x:Class="RingControl.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF"
+        xmlns:controls="clr-namespace:RingControl.App.Controls"
         Title="Ring Control"
         Width="1360" Height="880" MinWidth="1120" MinHeight="720"
         WindowStyle="None" Background="{StaticResource AppBackgroundBrush}"
@@ -86,19 +86,19 @@
                     <Border Background="#FF14202B" CornerRadius="6" Padding="7,2" Margin="14,0,0,0" VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse Width="6" Height="6" Fill="{StaticResource SuccessBrush}" VerticalAlignment="Center" Margin="0,0,6,0" />
-                            <TextBlock Text="Conectado" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}" />
+                            <TextBlock Text="Connected" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}" />
                         </StackPanel>
                     </Border>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button Style="{StaticResource WindowButton}" Click="Minimize_Click" ToolTip="Minimizar">
+                    <Button Style="{StaticResource WindowButton}" Click="Minimize_Click" ToolTip="Minimize">
                         <TextBlock Text="&#xE921;" FontFamily="{StaticResource IconFont}" FontSize="10" />
                     </Button>
-                    <Button x:Name="MaximizeButton" Style="{StaticResource WindowButton}" Click="Maximize_Click" ToolTip="Maximizar">
+                    <Button x:Name="MaximizeButton" Style="{StaticResource WindowButton}" Click="Maximize_Click" ToolTip="Maximize">
                         <TextBlock Text="&#xE922;" FontFamily="{StaticResource IconFont}" FontSize="10" />
                     </Button>
-                    <Button Style="{StaticResource CloseWindowButton}" Click="Close_Click" ToolTip="Cerrar">
+                    <Button Style="{StaticResource CloseWindowButton}" Click="Close_Click" ToolTip="Close">
                         <TextBlock Text="&#xE8BB;" FontFamily="{StaticResource IconFont}" FontSize="10" />
                     </Button>
                 </StackPanel>
@@ -122,10 +122,10 @@
                         </Grid.RowDefinitions>
 
                         <Grid Grid.Row="0" Margin="6,0,2,8">
-                            <TextBlock Text="DISPOSITIVOS" FontSize="10.5" FontWeight="SemiBold"
+                            <TextBlock Text="DEVICES" FontSize="10.5" FontWeight="SemiBold"
                                        Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" />
                             <Button HorizontalAlignment="Right" Style="{StaticResource IconButton}"
-                                    Command="{Binding LoadDevicesCommand}" ToolTip="Actualizar dispositivos">
+                                    Command="{Binding LoadDevicesCommand}" ToolTip="Refresh devices">
                                 <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" FontSize="14" />
                             </Button>
                         </Grid>
@@ -190,7 +190,7 @@
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="9,0,0,0" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding AccountLabel}" FontSize="12" TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Text="Sesión de Ring" Style="{StaticResource MutedCaption}" Margin="0,1,0,0" />
+                                        <TextBlock Text="Ring session" Style="{StaticResource MutedCaption}" Margin="0,1,0,0" />
                                     </StackPanel>
                                 </Grid>
                             </Border>
@@ -200,7 +200,7 @@
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="&#xE713;" Style="{StaticResource Glyph}" FontSize="14"
                                                Foreground="{StaticResource TextSecondaryBrush}" />
-                                    <TextBlock Text="Ajustes" Margin="10,0,0,0" />
+                                    <TextBlock Text="Settings" Margin="10,0,0,0" />
                                 </StackPanel>
                             </Button>
 
@@ -209,7 +209,7 @@
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="&#xE72E;" Style="{StaticResource Glyph}" FontSize="14"
                                                Foreground="{StaticResource TextSecondaryBrush}" />
-                                    <TextBlock Text="Cerrar sesión" Margin="10,0,0,0" />
+                                    <TextBlock Text="Sign out" Margin="10,0,0,0" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>
@@ -260,7 +260,7 @@
                                 IsEnabled="{Binding SelectedDevice.IsBusy, Converter={StaticResource InverseBool}}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE72C;" Style="{StaticResource Glyph}" FontSize="13" />
-                                <TextBlock Text="Actualizar" Margin="8,0,0,0" />
+                                <TextBlock Text="Refresh" Margin="8,0,0,0" />
                             </StackPanel>
                         </Button>
                     </Grid>
@@ -279,11 +279,10 @@
                             </Grid.RowDefinitions>
 
                             <Border Grid.Row="0" Style="{StaticResource Card}" Padding="0" Background="#FF06080B" ClipToBounds="True">
-                                <Grid>
-                                    <vlc:VideoView x:Name="VideoView" Background="Black"
-                                                   MediaPlayer="{Binding SelectedDevice.MediaPlayer}"
-                                                   Visibility="{Binding SelectedDevice.IsVideoVisible, Converter={StaticResource BoolToVis}}" />
-
+                                <Grid Background="#FF06080B">
+                                    <!-- LibVLC draws into a child HWND owned by this window
+                                         (VideoSurface), so the video is always embedded and no
+                                         extra top-level window is ever created. -->
                                     <Grid Visibility="{Binding SelectedDevice.IsVideoVisible, Converter={StaticResource InverseBoolToVis}}">
                                         <Image Source="{Binding SelectedDevice.SnapshotImage}" Stretch="UniformToFill" />
                                         <Border Background="#59070A0E" />
@@ -301,10 +300,10 @@
                                                 <TextBlock Text="{Binding SelectedDevice.LiveError}" Foreground="#FFFCA5A5" FontSize="12.5"
                                                            TextAlignment="Center" TextWrapping="Wrap" Margin="0,8,0,0"
                                                            Visibility="{Binding SelectedDevice.LiveError, Converter={StaticResource StringToVis}}" />
-                                                <TextBlock Text="La instantánea se actualiza automáticamente. Inicia el vídeo en directo para ver la cámara en tiempo real."
+                                                <TextBlock Text="The snapshot refreshes automatically. Start live view to see the camera in real time."
                                                            Style="{StaticResource MutedCaption}" TextAlignment="Center" TextWrapping="Wrap"
                                                            LineHeight="17" Margin="0,10,0,0" />
-                                                <Button Content="Iniciar vídeo en directo" Style="{StaticResource PrimaryButton}"
+                                                <Button Content="Start live view" Style="{StaticResource PrimaryButton}"
                                                         HorizontalAlignment="Center" Margin="0,18,0,0" Padding="18,9"
                                                         Command="{Binding SelectedDevice.ToggleLiveCommand}"
                                                         Visibility="{Binding SelectedDevice.CanStartLive, Converter={StaticResource BoolToVis}}" />
@@ -319,11 +318,13 @@
                                             <StackPanel Orientation="Horizontal">
                                                 <Ellipse Width="7" Height="7" Fill="{StaticResource SuccessBrush}"
                                                          VerticalAlignment="Center" Margin="0,0,6,0" />
-                                                <TextBlock Text="Instantánea" FontSize="10.5"
+                                                <TextBlock Text="Snapshot" FontSize="10.5"
                                                            Foreground="{StaticResource TextSecondaryBrush}" />
                                             </StackPanel>
                                         </Border>
                                     </Grid>
+                                    <controls:VideoSurface MediaPlayer="{Binding SelectedDevice.MediaPlayer}"
+                                                           Visibility="{Binding SelectedDevice.IsVideoVisible, Converter={StaticResource BoolToVis}}" />
                                 </Grid>
                             </Border>
 
@@ -357,11 +358,11 @@
                                             Command="{Binding SelectedDevice.SaveSnapshotCommand}">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="&#xE722;" Style="{StaticResource Glyph}" FontSize="13" />
-                                            <TextBlock Text="Captura" Margin="8,0,0,0" />
+                                            <TextBlock Text="Snapshot" Margin="8,0,0,0" />
                                         </StackPanel>
                                     </Button>
 
-                                    <Button Style="{StaticResource IconButton}" Margin="8,0,0,0" ToolTip="Abrir carpeta de grabaciones"
+                                    <Button Style="{StaticResource IconButton}" Margin="8,0,0,0" ToolTip="Open recordings folder"
                                             Command="{Binding SelectedDevice.OpenRecordingsFolderCommand}">
                                         <TextBlock Text="&#xE8B7;" FontFamily="{StaticResource IconFont}" FontSize="14" />
                                     </Button>
@@ -379,7 +380,7 @@
                             <StackPanel>
                                 <Border Style="{StaticResource Card}" Margin="0,0,0,12">
                                     <StackPanel>
-                                        <TextBlock Text="Controles" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
+                                        <TextBlock Text="Controls" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
 
                                         <Border Background="{StaticResource DangerSoftBrush}" BorderBrush="#FF5A2A31"
                                                 BorderThickness="1" CornerRadius="9" Padding="10,8" Margin="0,0,0,10"
@@ -398,7 +399,7 @@
                                         <Border Background="#FF2A2113" BorderBrush="#FF5C4A1C" BorderThickness="1"
                                                 CornerRadius="9" Padding="10,8" Margin="0,0,0,10"
                                                 Visibility="{Binding SelectedDevice.LiveViewDisabled, Converter={StaticResource BoolToVis}}">
-                                            <TextBlock Text="La vista en vivo está desactivada para esta cámara en la app de Ring."
+                                            <TextBlock Text="Live view is disabled for this camera in the Ring app."
                                                        Foreground="#FFFDE68A" FontSize="11.5" TextWrapping="Wrap" />
                                         </Border>
 
@@ -413,8 +414,8 @@
                                                            Foreground="{StaticResource TextSecondaryBrush}" />
                                             </Border>
                                             <StackPanel Grid.Column="1" Margin="10,0,8,0" VerticalAlignment="Center">
-                                                <TextBlock Text="Luz" FontSize="13" />
-                                                <TextBlock Text="Foco del dispositivo" Style="{StaticResource MutedCaption}" Margin="0,1,0,0" />
+                                                <TextBlock Text="Light" FontSize="13" />
+                                                <TextBlock Text="Device spotlight" Style="{StaticResource MutedCaption}" Margin="0,1,0,0" />
                                             </StackPanel>
                                             <ToggleButton Grid.Column="2" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center"
                                                           IsChecked="{Binding SelectedDevice.LightOn, Mode=OneWay}"
@@ -432,8 +433,8 @@
                                                            Foreground="{StaticResource TextSecondaryBrush}" />
                                             </Border>
                                             <StackPanel Grid.Column="1" Margin="10,0,8,0" VerticalAlignment="Center">
-                                                <TextBlock Text="Sirena" FontSize="13" />
-                                                <TextBlock Text="Alarma sonora" Style="{StaticResource MutedCaption}" Margin="0,1,0,0" />
+                                                <TextBlock Text="Siren" FontSize="13" />
+                                                <TextBlock Text="Audible alarm" Style="{StaticResource MutedCaption}" Margin="0,1,0,0" />
                                             </StackPanel>
                                             <ToggleButton Grid.Column="2" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center"
                                                           IsChecked="{Binding SelectedDevice.SirenOn, Mode=OneWay}"
@@ -451,8 +452,8 @@
                                                            Foreground="{StaticResource TextSecondaryBrush}" />
                                             </Border>
                                             <StackPanel Grid.Column="1" Margin="10,0,8,0" VerticalAlignment="Center">
-                                                <TextBlock Text="Movimiento" FontSize="13" />
-                                                <TextBlock Text="Detección de movimiento" Style="{StaticResource MutedCaption}" Margin="0,1,0,0" />
+                                                <TextBlock Text="Motion" FontSize="13" />
+                                                <TextBlock Text="Motion detection" Style="{StaticResource MutedCaption}" Margin="0,1,0,0" />
                                             </StackPanel>
                                             <ToggleButton Grid.Column="2" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center"
                                                           IsChecked="{Binding SelectedDevice.MotionOn, Mode=OneWay}"
@@ -470,8 +471,8 @@
                                                            Foreground="{StaticResource TextSecondaryBrush}" />
                                             </Border>
                                             <StackPanel Grid.Column="1" Margin="10,0,8,0" VerticalAlignment="Center">
-                                                <TextBlock Text="Timbre" FontSize="13" />
-                                                <TextBlock Text="Sonido del timbre" Style="{StaticResource MutedCaption}" Margin="0,1,0,0" />
+                                                <TextBlock Text="Doorbell" FontSize="13" />
+                                                <TextBlock Text="Doorbell sound" Style="{StaticResource MutedCaption}" Margin="0,1,0,0" />
                                             </StackPanel>
                                             <ToggleButton Grid.Column="2" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center"
                                                           IsChecked="{Binding SelectedDevice.ChimeOn, Mode=OneWay}"
@@ -483,8 +484,8 @@
                                 <Border Style="{StaticResource Card}">
                                     <StackPanel>
                                         <Grid Margin="0,0,0,10">
-                                            <TextBlock Text="Estado del dispositivo" Style="{StaticResource SectionTitle}" />
-                                            <TextBlock Text="Actualizando…" Style="{StaticResource MutedCaption}"
+                                            <TextBlock Text="Device status" Style="{StaticResource SectionTitle}" />
+                                            <TextBlock Text="Refreshing…" Style="{StaticResource MutedCaption}"
                                                        HorizontalAlignment="Right" VerticalAlignment="Center"
                                                        Visibility="{Binding SelectedDevice.IsBusy, Converter={StaticResource BoolToVis}}" />
                                         </Grid>
@@ -492,7 +493,7 @@
                                         <Border Style="{StaticResource SoftCard}" Margin="0,0,0,8"
                                                 Visibility="{Binding SelectedDevice.HasAddress, Converter={StaticResource BoolToVis}}">
                                             <StackPanel>
-                                                <TextBlock Text="Dirección" Style="{StaticResource MutedCaption}" />
+                                                <TextBlock Text="Address" Style="{StaticResource MutedCaption}" />
                                                 <TextBlock Text="{Binding SelectedDevice.Address}" FontSize="12.5"
                                                            TextWrapping="Wrap" Margin="0,3,0,0" />
                                             </StackPanel>
@@ -521,7 +522,7 @@
                                 <Border Style="{StaticResource Card}" Margin="0,12,0,0">
                                     <StackPanel>
                                         <Grid Margin="0,0,0,10">
-                                            <TextBlock Text="Grabador NVR" Style="{StaticResource SectionTitle}" />
+                                            <TextBlock Text="NVR recorder" Style="{StaticResource SectionTitle}" />
                                             <Border HorizontalAlignment="Right" VerticalAlignment="Center" Background="#FF10161D"
                                                     CornerRadius="6" Padding="7,2">
                                                 <StackPanel Orientation="Horizontal">
@@ -613,30 +614,30 @@
                                         </Border>
 
                                         <Grid Margin="0,12,0,0">
-                                            <TextBlock Text="Carpeta" Style="{StaticResource Caption}" VerticalAlignment="Center" />
-                                            <Button HorizontalAlignment="Right" Style="{StaticResource SmallButton}" Content="Abrir"
+                                            <TextBlock Text="Folder" Style="{StaticResource Caption}" VerticalAlignment="Center" />
+                                            <Button HorizontalAlignment="Right" Style="{StaticResource SmallButton}" Content="Open"
                                                     Command="{Binding Nvr.OpenFolderCommand}" />
                                         </Grid>
                                         <TextBlock Text="{Binding Nvr.FolderLabel}" Style="{StaticResource MutedCaption}"
                                                    TextTrimming="CharacterEllipsis" ToolTip="{Binding Nvr.FolderLabel}" Margin="0,3,0,0" />
 
                                         <Grid Margin="0,9,0,0">
-                                            <TextBlock Text="Grabaciones" Style="{StaticResource Caption}" />
+                                            <TextBlock Text="Recordings" Style="{StaticResource Caption}" />
                                             <TextBlock Text="{Binding Nvr.UsageLabel}" HorizontalAlignment="Right" FontSize="12"
                                                        FontWeight="SemiBold" />
                                         </Grid>
                                         <Grid Margin="0,6,0,0">
-                                            <TextBlock Text="Espacio libre" Style="{StaticResource Caption}" />
+                                            <TextBlock Text="Free space" Style="{StaticResource Caption}" />
                                             <TextBlock Text="{Binding Nvr.FreeLabel}" HorizontalAlignment="Right" FontSize="12"
                                                        FontWeight="SemiBold" />
                                         </Grid>
                                         <Grid Margin="0,6,0,0">
-                                            <TextBlock Text="Retención" Style="{StaticResource Caption}" />
+                                            <TextBlock Text="Retention" Style="{StaticResource Caption}" />
                                             <TextBlock Text="{Binding Nvr.RetentionLabel}" HorizontalAlignment="Right" FontSize="12"
                                                        FontWeight="SemiBold" MaxWidth="190" TextTrimming="CharacterEllipsis" />
                                         </Grid>
                                         <Grid Margin="0,6,0,0">
-                                            <TextBlock Text="Cámaras" Style="{StaticResource Caption}" />
+                                            <TextBlock Text="Cameras" Style="{StaticResource Caption}" />
                                         </Grid>
                                         <TextBlock Text="{Binding Nvr.DeviceStatusLabel}" Style="{StaticResource MutedCaption}"
                                                    Margin="0,2,0,0" TextWrapping="Wrap" />
@@ -649,7 +650,7 @@
                     <!-- Library: Ring events + local NVR recordings -->
                     <Border Grid.Row="2" Style="{StaticResource Card}" Margin="24,14,24,0" Padding="18,12">
                         <TabControl Style="{StaticResource DarkTabControl}">
-                            <TabItem Header="Eventos recientes" Style="{StaticResource DarkTabItem}">
+                            <TabItem Header="Recent events" Style="{StaticResource DarkTabItem}">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
@@ -660,7 +661,7 @@
                                         <TextBlock Text="{Binding SelectedDevice.EventCountLabel}" Style="{StaticResource MutedCaption}"
                                                    VerticalAlignment="Center" />
                                         <Button HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource SmallButton}"
-                                                Content="Actualizar" Command="{Binding SelectedDevice.RefreshCommand}" />
+                                                Content="Refresh" Command="{Binding SelectedDevice.RefreshCommand}" />
                                     </Grid>
 
                                     <ListBox Grid.Row="1" Margin="0,6,0,0" ItemsSource="{Binding SelectedDevice.Events}"
@@ -688,7 +689,7 @@
                                                             <Border Background="#CC173A2A" CornerRadius="4" Padding="5,1"
                                                                     HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4"
                                                                     Visibility="{Binding PersonDetected, Converter={StaticResource BoolToVis}}">
-                                                                <TextBlock Text="Persona" FontSize="9.5" Foreground="#FF86EFAC" />
+                                                                <TextBlock Text="Person" FontSize="9.5" Foreground="#FF86EFAC" />
                                                             </Border>
                                                         </Grid>
                                                     </Border>
@@ -702,8 +703,8 @@
                                                     </StackPanel>
 
                                                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                                        <Button Style="{StaticResource SmallButton}" Content="Ver" Command="{Binding PlayCommand}" />
-                                                        <Button Style="{StaticResource SmallButton}" Content="Guardar" Margin="6,0,0,0"
+                                                        <Button Style="{StaticResource SmallButton}" Content="View" Command="{Binding PlayCommand}" />
+                                                        <Button Style="{StaticResource SmallButton}" Content="Save" Margin="6,0,0,0"
                                                                 Command="{Binding SaveCommand}" />
                                                     </StackPanel>
                                                 </Grid>
@@ -711,13 +712,13 @@
                                         </ListBox.ItemTemplate>
                                     </ListBox>
 
-                                    <TextBlock Grid.Row="1" Text="No hay eventos recientes para este dispositivo."
+                                    <TextBlock Grid.Row="1" Text="No recent events for this device."
                                                Style="{StaticResource MutedCaption}" HorizontalAlignment="Center" VerticalAlignment="Center"
                                                Visibility="{Binding SelectedDevice.HasEvents, Converter={StaticResource InverseBoolToVis}}" />
                                 </Grid>
                             </TabItem>
 
-                            <TabItem Header="Grabaciones NVR" Style="{StaticResource DarkTabItem}">
+                            <TabItem Header="NVR recordings" Style="{StaticResource DarkTabItem}">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
@@ -732,12 +733,12 @@
                                         </StackPanel>
 
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                            <Button Style="{StaticResource SmallButton}" Content="Aplicar retención"
+                                            <Button Style="{StaticResource SmallButton}" Content="Apply retention"
                                                     Command="{Binding Nvr.EnforceRetentionCommand}"
                                                     IsEnabled="{Binding Nvr.IsBusy, Converter={StaticResource InverseBool}}" />
-                                            <Button Style="{StaticResource SmallButton}" Content="Abrir carpeta" Margin="6,0,0,0"
+                                            <Button Style="{StaticResource SmallButton}" Content="Open folder" Margin="6,0,0,0"
                                                     Command="{Binding Nvr.OpenFolderCommand}" />
-                                            <Button Style="{StaticResource SmallButton}" Content="Actualizar" Margin="6,0,0,0"
+                                            <Button Style="{StaticResource SmallButton}" Content="Refresh" Margin="6,0,0,0"
                                                     Command="{Binding Nvr.RefreshCommand}" />
                                         </StackPanel>
                                     </Grid>
@@ -761,7 +762,7 @@
                                                             <Border Background="#CC2A2113" CornerRadius="4" Padding="4,1"
                                                                     HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="4"
                                                                     Visibility="{Binding IsIncomplete, Converter={StaticResource BoolToVis}}">
-                                                                <TextBlock Text="Incompleto" FontSize="9" Foreground="#FFFDE68A" />
+                                                                <TextBlock Text="Incomplete" FontSize="9" Foreground="#FFFDE68A" />
                                                             </Border>
                                                         </Grid>
                                                     </Border>
@@ -779,10 +780,10 @@
                                                             <TextBlock Text="{Binding TriggerLabel}" FontSize="10.5"
                                                                        Foreground="{StaticResource TextSecondaryBrush}" />
                                                         </Border>
-                                                        <Button Style="{StaticResource SmallButton}" Content="Ver" Command="{Binding PlayCommand}" />
-                                                        <Button Style="{StaticResource SmallButton}" Content="Carpeta" Margin="6,0,0,0"
+                                                        <Button Style="{StaticResource SmallButton}" Content="View" Command="{Binding PlayCommand}" />
+                                                        <Button Style="{StaticResource SmallButton}" Content="Folder" Margin="6,0,0,0"
                                                                 Command="{Binding OpenFolderCommand}" />
-                                                        <Button Style="{StaticResource SmallButton}" Content="Eliminar" Margin="6,0,0,0"
+                                                        <Button Style="{StaticResource SmallButton}" Content="Delete" Margin="6,0,0,0"
                                                                 Command="{Binding DeleteCommand}" />
                                                     </StackPanel>
                                                 </Grid>
@@ -792,9 +793,9 @@
 
                                     <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
                                                 Visibility="{Binding Nvr.HasClips, Converter={StaticResource InverseBoolToVis}}">
-                                        <TextBlock Text="Todavía no hay grabaciones locales." Style="{StaticResource Caption}"
+                                        <TextBlock Text="No local recordings yet." Style="{StaticResource Caption}"
                                                    HorizontalAlignment="Center" />
-                                        <TextBlock Text="Inicia el NVR para grabar eventos o de forma continua."
+                                        <TextBlock Text="Start the NVR to record events or record continuously."
                                                    Style="{StaticResource MutedCaption}" Margin="0,4,0,0"
                                                    HorizontalAlignment="Center" />
                                     </StackPanel>
@@ -819,7 +820,7 @@
                                     <TextBlock Text="{Binding SelectedDevice.RecordingInfo, StringFormat=REC {0}}"
                                                FontSize="11" Foreground="#FFFCA5A5" VerticalAlignment="Center" />
                                 </StackPanel>
-                                <TextBlock Text="Convirtiendo…" Style="{StaticResource MutedCaption}" Margin="0,0,14,0"
+                                <TextBlock Text="Converting…" Style="{StaticResource MutedCaption}" Margin="0,0,14,0"
                                            Visibility="{Binding SelectedDevice.IsConverting, Converter={StaticResource BoolToVis}}" />
                                 <TextBlock Text="Ring Control" Style="{StaticResource MutedCaption}" />
                             </StackPanel>
@@ -830,9 +831,9 @@
                     <Border Grid.Row="0" Grid.RowSpan="4" Background="{StaticResource AppBackgroundBrush}"
                             Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <TextBlock Text="Cargando dispositivos…" FontSize="15" Foreground="{StaticResource TextSecondaryBrush}"
+                            <TextBlock Text="Loading devices…" FontSize="15" Foreground="{StaticResource TextSecondaryBrush}"
                                        HorizontalAlignment="Center" />
-                            <TextBlock Text="Conectando con Ring" Style="{StaticResource MutedCaption}"
+                            <TextBlock Text="Connecting to Ring" Style="{StaticResource MutedCaption}"
                                        HorizontalAlignment="Center" Margin="0,6,0,0" />
                         </StackPanel>
                     </Border>
@@ -845,12 +846,12 @@
                                 <TextBlock Text="&#xE7ED;" Style="{StaticResource Glyph}" FontSize="26"
                                            Foreground="{StaticResource TextMutedBrush}" />
                             </Border>
-                            <TextBlock Text="No hay dispositivos" FontSize="18" FontWeight="SemiBold"
+                            <TextBlock Text="No devices" FontSize="18" FontWeight="SemiBold"
                                        HorizontalAlignment="Center" Margin="0,16,0,0" />
                             <TextBlock Text="{Binding ErrorMessage}" Style="{StaticResource Caption}" TextAlignment="Center"
                                        TextWrapping="Wrap" Margin="0,8,0,0"
                                        Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVis}}" />
-                            <Button Content="Reintentar" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Center"
+                            <Button Content="Retry" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Center"
                                     Margin="0,18,0,0" Command="{Binding LoadDevicesCommand}" />
                         </StackPanel>
                     </Border>

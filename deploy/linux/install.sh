@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 #
-# Instalador de RingControl para Linux (CLI + NVR headless).
+# RingControl installer for Linux (headless CLI + NVR).
 #
-#   sudo ./install.sh                 # servicio del sistema para el usuario que ejecuta sudo
-#   ./install.sh --user               # servicio de usuario (systemd --user), sin root
-#   sudo ./install.sh --recordings /mnt/grabaciones
+#   sudo ./install.sh                 # system service for the user running sudo
+#   ./install.sh --user               # user service (systemd --user), no root
+#   sudo ./install.sh --recordings /mnt/recordings
 #
-# El instalador copia el binario, crea el comando `ringcontrol`, prepara la
-# configuración, inicia sesión en Ring (si hace falta) y activa el servicio NVR.
+# The installer copies the binary, creates the `ringcontrol` command, prepares the
+# configuration, signs in to Ring (if needed), and enables the NVR service.
 #
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SERVICE="ringcontrol-nvr"
-VERSION="${VERSION:-1.0.0}"
+VERSION="${VERSION:-1.0.1}"
 
 MODE="auto"
 PREFIX=""
@@ -24,17 +24,17 @@ DO_START=1
 
 usage() {
     cat <<'EOF'
-Uso: install.sh [opciones]
+Usage: install.sh [options]
 
-  --user                 Instala para el usuario actual (systemd --user, sin root)
-  --system               Fuerza la instalación como servicio del sistema
-  --prefix <ruta>        Carpeta de instalación (por defecto /opt/ringcontrol o ~/.local/opt/ringcontrol)
-  --recordings <ruta>    Carpeta de grabaciones (por defecto ~/Videos/RingControl)
-  --no-login             No iniciar sesión en Ring durante la instalación
-  --no-start             No arrancar el servicio al terminar
-  -h, --help             Muestra esta ayuda
+  --user                 Install for the current user (systemd --user, no root)
+  --system               Force a system service installation
+  --prefix <path>        Installation folder (default /opt/ringcontrol or ~/.local/opt/ringcontrol)
+  --recordings <path>    Recordings folder (default ~/Videos/RingControl)
+  --no-login             Do not sign in to Ring during the installation
+  --no-start             Do not start the service when done
+  -h, --help             Show this help
 
-Variables: VERSION (por defecto 1.0.0)
+Variables: VERSION (default 1.0.1)
 EOF
 }
 
@@ -42,12 +42,12 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --user) MODE="user" ;;
         --system) MODE="system" ;;
-        --prefix) PREFIX="${2:?falta la ruta}"; shift ;;
-        --recordings) RECORDINGS="${2:?falta la ruta}"; shift ;;
+        --prefix) PREFIX="${2:?missing path}"; shift ;;
+        --recordings) RECORDINGS="${2:?missing path}"; shift ;;
         --no-login) DO_LOGIN=0 ;;
         --no-start) DO_START=0 ;;
         -h|--help) usage; exit 0 ;;
-        *) echo "Opción desconocida: $1" >&2; usage; exit 2 ;;
+        *) echo "Unknown option: $1" >&2; usage; exit 2 ;;
     esac
     shift
 done
@@ -57,13 +57,13 @@ if [ "$MODE" = "auto" ]; then
 fi
 
 if [ "$MODE" = "system" ] && [ "$(id -u)" -ne 0 ]; then
-    echo "Para instalar como servicio del sistema ejecuta: sudo $0" >&2
-    echo "Para una instalación sin root: $0 --user" >&2
+    echo "To install as a system service, run: sudo $0" >&2
+    echo "For a rootless installation: $0 --user" >&2
     exit 1
 fi
 
 if [ "$MODE" = "user" ] && [ "$(id -u)" -eq 0 ]; then
-    echo "La instalación --user debe ejecutarse sin sudo, con el usuario que usará el NVR." >&2
+    echo "The --user installation must run without sudo, as the user that will run the NVR." >&2
     exit 1
 fi
 
@@ -88,18 +88,18 @@ RECORDINGS="${RECORDINGS:-$TARGET_HOME/Videos/RingControl}"
 case "$(uname -m)" in
     x86_64|amd64|x64) RID="linux-x64" ;;
     aarch64|arm64)    RID="linux-arm64" ;;
-    *) echo "Arquitectura no soportada: $(uname -m)" >&2; exit 1 ;;
+    *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
 esac
 
 PAYLOAD="$ROOT/dist/$RID/ringcontrol"
 
 if [ ! -f "$PAYLOAD" ]; then
-    echo "==> No hay binario publicado; compilando para $RID"
+    echo "==> No published binary found; building for $RID"
     "$ROOT/deploy/linux/build.sh" "$(uname -m)"
 fi
 
 if [ ! -f "$PAYLOAD" ]; then
-    echo "No se encontró el binario: $PAYLOAD" >&2
+    echo "Binary not found: $PAYLOAD" >&2
     exit 1
 fi
 
@@ -111,36 +111,36 @@ run_as_user() {
     fi
 }
 
-echo "==> Instalando RingControl $VERSION en $PREFIX"
+echo "==> Installing RingControl $VERSION into $PREFIX"
 install -d -m 755 "$PREFIX"
 install -m 755 "$PAYLOAD" "$PREFIX/ringcontrol"
 
-echo "==> Creando el comando ringcontrol"
+echo "==> Creating the ringcontrol command"
 install -d -m 755 "$(dirname "$BIN_LINK")"
 ln -sf "$PREFIX/ringcontrol" "$BIN_LINK"
 
-echo "==> Preparando carpetas"
+echo "==> Preparing folders"
 install -d -m 700 -o "$TARGET_USER" -g "$TARGET_GROUP" "$CONFIG_DIR" 2>/dev/null || install -d -m 700 "$CONFIG_DIR"
 install -d -m 755 -o "$TARGET_USER" -g "$TARGET_GROUP" "$RECORDINGS" 2>/dev/null || install -d -m 755 "$RECORDINGS"
 
 if [ "$DO_LOGIN" = "1" ] && [ ! -f "$CONFIG_DIR/session.dat" ]; then
     if [ -t 0 ]; then
         echo ""
-        echo "==> Iniciando sesión en Ring (se guarda solo el refresh token cifrado)"
+        echo "==> Signing in to Ring (only the encrypted refresh token is stored)"
         run_as_user "$PREFIX/ringcontrol" login || {
             echo ""
-            echo "No se pudo iniciar sesión. Ejecuta más tarde:" >&2
+            echo "Sign-in failed. Run it later:" >&2
             echo "  ringcontrol login" >&2
         }
     else
-        echo "==> Sin terminal interactiva: inicia sesión luego con 'ringcontrol login'"
+        echo "==> No interactive terminal: sign in later with 'ringcontrol login'"
     fi
 fi
 
-echo "==> Creando la configuración del NVR"
+echo "==> Creating the NVR configuration"
 run_as_user "$PREFIX/ringcontrol" nvr config --init >/dev/null 2>&1 || true
 
-echo "==> Instalando el servicio systemd"
+echo "==> Installing the systemd service"
 install -d -m 755 "$UNIT_DIR"
 
 ROOT_ARG=""
@@ -159,7 +159,7 @@ sed \
     "$ROOT/deploy/linux/ringcontrol-nvr.service" > "$UNIT_DIR/$SERVICE.service"
 
 if [ "$MODE" = "user" ]; then
-    # Un servicio de usuario no puede endurecer ProtectHome sobre su propio hogar.
+    # A user service cannot harden ProtectHome over its own home directory.
     sed -i \
         -e "/^User=/d" \
         -e "/^Group=/d" \
@@ -182,27 +182,27 @@ else
         systemctl --user enable "$SERVICE"
     fi
     loginctl enable-linger "$USER" >/dev/null 2>&1 || \
-        echo "  (ejecuta 'sudo loginctl enable-linger $USER' para que el NVR arranque sin sesión abierta)"
+        echo "  (run 'sudo loginctl enable-linger $USER' so the NVR starts without an open session)"
 fi
 
 echo ""
-echo "RingControl instalado."
-echo "  Binario:      $PREFIX/ringcontrol"
-echo "  Comando:      $BIN_LINK"
-echo "  Configuración: $CONFIG_DIR/nvr.json"
-echo "  Grabaciones:  $RECORDINGS"
-echo "  Servicio:     $SERVICE"
+echo "RingControl installed."
+echo "  Binary:       $PREFIX/ringcontrol"
+echo "  Command:      $BIN_LINK"
+echo "  Configuration: $CONFIG_DIR/nvr.json"
+echo "  Recordings:   $RECORDINGS"
+echo "  Service:      $SERVICE"
 echo ""
 
 if [ "$MODE" = "system" ]; then
-    echo "  Estado:  sudo systemctl status $SERVICE"
+    echo "  Status:  sudo systemctl status $SERVICE"
     echo "  Logs:    sudo journalctl -u $SERVICE -f"
-    echo "  Parar:   sudo systemctl stop $SERVICE"
+    echo "  Stop:    sudo systemctl stop $SERVICE"
 else
-    echo "  Estado:  systemctl --user status $SERVICE"
+    echo "  Status:  systemctl --user status $SERVICE"
     echo "  Logs:    journalctl --user -u $SERVICE -f"
-    echo "  Parar:   systemctl --user stop $SERVICE"
+    echo "  Stop:    systemctl --user stop $SERVICE"
 fi
 
-echo "  Estado NVR: ringcontrol nvr status"
+echo "  NVR status: ringcontrol nvr status"
 echo ""

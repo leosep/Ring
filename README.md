@@ -2,11 +2,23 @@
 
 NVR and control panel for **Ring** cameras and doorbells, featuring:
 
-- **Windows desktop app** (WPF, dark theme): device status, live view, light, siren, chime, motion detection, manual recording, and **NVR mode**.
+- **Windows desktop app** (WPF, dark theme): device status, live view embedded in the main window, light, siren, chime, motion detection, manual recording, and **NVR mode**.
 - **Headless CLI + daemon for Linux**: 24/7 or event-based recording, segment rotation, retention, and `systemd` service.
 - **Shared engine** (`RingControl.Core`) that records H.264 directly to **fragmented MP4** without ffmpeg or native dependencies.
 
 > ⚠️ **Notice**: Ring does not offer a public API. RingControl uses the same private API as the official app and projects like `ring-client-api` / `python-ring-doorbell`. Ring may change or block access at any time. Use only with your own account.
+
+---
+
+## Screenshots
+
+| Desktop app | Live view |
+| --- | --- |
+| ![RingControl main window](docs/screenshots/main-window.png) | ![RingControl live view](docs/screenshots/live-window.png) |
+
+| Sign in |
+| --- |
+| ![RingControl login](docs/screenshots/login-window.png) |
 
 ---
 
@@ -36,15 +48,15 @@ NVR and control panel for **Ring** cameras and doorbells, featuring:
 
 ## Windows Installation
 
-1. Run `RingControlSetup-1.0.0.exe`.
-2. Choose the folder (default `%LOCALAPPDATA%\Programs\RingControl`), shortcuts, and whether to start the NVR on login.
+1. Download `RingControlSetup-1.0.1.exe` from the [latest release](https://github.com/leosep/Ring/releases/latest).
+2. Run it and choose the folder (default `%LOCALAPPDATA%\Programs\RingControl`), shortcuts, and whether to start the NVR on login.
 3. Click **Install**. No administrator privileges required.
 4. Open RingControl and sign in with your Ring account (2FA code included).
 
 Silent installation (e.g., for deployments):
 
 ```powershell
-.\RingControlSetup-1.0.0.exe /S --autostart --no-launch
+.\RingControlSetup-1.0.1.exe /S --autostart --no-launch
 ```
 
 Installer options:
@@ -61,7 +73,7 @@ Installer options:
 | `--uninstall` | Uninstall |
 | `--purge` | On uninstall, also delete config and session |
 
-A portable version `RingControl-1.0.0-win-x64.zip` is also generated, which doesn't write to the registry.
+A portable version `RingControl-1.0.1-win-x64.zip` is also generated, which doesn't write to the registry.
 
 Uninstall: **Settings → Apps → RingControl**, or
 
@@ -247,7 +259,7 @@ dotnet build RingControl.sln -c Release
 Windows (installer + portable):
 
 ```powershell
-.\build\publish-windows.ps1 -Version 1.0.0
+.\build\publish-windows.ps1 -Version 1.0.1
 ```
 
 Linux:

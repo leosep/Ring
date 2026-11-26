@@ -48,10 +48,10 @@ public sealed partial class LoginViewModel : ObservableObject
     public bool ShowCredentials => !IsTwoFactor;
 
     public string SubmitText => IsBusy
-        ? "Conectando…"
+        ? "Connecting…"
         : IsTwoFactor
-            ? "Verificar código"
-            : "Iniciar sesión";
+            ? "Verify code"
+            : "Sign in";
 
     public RingTokens? Tokens { get; private set; }
 
@@ -71,19 +71,19 @@ public sealed partial class LoginViewModel : ObservableObject
         {
             if (string.IsNullOrWhiteSpace(Email) || !Email.Contains('@'))
             {
-                ErrorMessage = "Introduce un correo electrónico válido.";
+                ErrorMessage = "Enter a valid email address.";
                 return;
             }
 
             if (string.IsNullOrEmpty(Password))
             {
-                ErrorMessage = "Introduce tu contraseña de Ring.";
+                ErrorMessage = "Enter your Ring password.";
                 return;
             }
         }
         else if (TwoFactorCode.Trim().Length < 4)
         {
-            ErrorMessage = "Introduce el código de verificación que ha enviado Ring.";
+            ErrorMessage = "Enter the verification code Ring sent you.";
             return;
         }
 
@@ -108,8 +108,10 @@ public sealed partial class LoginViewModel : ObservableObject
         catch (RingAuthException ex) when (ex.RequiresTwoFactor)
         {
             IsTwoFactor = true;
-            InfoMessage = ex.Prompt ?? "Ring requiere un código de verificación.";
-            Password = string.Empty;
+            InfoMessage = ex.Prompt ?? "Ring requires a verification code.";
+
+            // Keep the password: Ring asks for it again together with the code on
+            // the second login request.
             TwoFactorCode = string.Empty;
 
             if (ex.StatusCode == 400)

@@ -142,8 +142,8 @@ public sealed class RingDevice
 {
     private static readonly Dictionary<string, string> ModelNames = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["doorbell_graham_cracker"] = "Video Doorbell (1ª gen)",
-        ["doorbell_graham_cracker_lite"] = "Video Doorbell (1ª gen)",
+        ["doorbell_graham_cracker"] = "Video Doorbell (1st gen)",
+        ["doorbell_graham_cracker_lite"] = "Video Doorbell (1st gen)",
         ["doorbell_v3"] = "Video Doorbell 2",
         ["doorbell_v4"] = "Video Doorbell 3",
         ["doorbell_v5"] = "Video Doorbell 4",
@@ -157,8 +157,8 @@ public sealed class RingDevice
         ["lpd_v2"] = "Video Doorbell Pro 2",
         ["lpd_v4"] = "Video Doorbell Pro 2",
         ["stickup_cam"] = "Stick Up Cam",
-        ["stickup_cam_v3"] = "Stick Up Cam (2ª gen)",
-        ["stickup_cam_v4"] = "Stick Up Cam (3ª gen)",
+        ["stickup_cam_v3"] = "Stick Up Cam (2nd gen)",
+        ["stickup_cam_v4"] = "Stick Up Cam (3rd gen)",
         ["stickup_cam_lunar"] = "Stick Up Cam Pro",
         ["stickup_cam_mini"] = "Indoor Cam",
         ["stickup_cam_longfin"] = "Spotlight Cam Plus",
@@ -168,11 +168,11 @@ public sealed class RingDevice
         ["cocoa_camera"] = "Floodlight Cam",
         ["floodlight_v2"] = "Floodlight Cam Wired Pro",
         ["floodlight_pro"] = "Floodlight Cam Pro",
-        ["onvif_camera"] = "Cámara ONVIF",
+        ["onvif_camera"] = "ONVIF Camera",
     };
 
     public long Id { get; set; }
-    public string Name { get; set; } = "Dispositivo Ring";
+    public string Name { get; set; } = "Ring device";
     public string Kind { get; set; } = string.Empty;
     public string? DeviceType { get; set; }
     public string? LocationId { get; set; }
@@ -192,12 +192,12 @@ public sealed class RingDevice
 
     public string ModelLabel => ModelNames.TryGetValue(Kind, out var label) ? label : PrettifyKind(Kind);
 
-    public string KindLabel => IsDoorbell ? "Timbre" : "Cámara";
+    public string KindLabel => IsDoorbell ? "Doorbell" : "Camera";
 
-    public string StatusLabel => IsOnline ? "En línea" : "Sin conexión";
+    public string StatusLabel => IsOnline ? "Online" : "Offline";
 
     public string BatteryLabel => BatteryPercent is null
-        ? (IsCharging ? "Alimentación externa" : "—")
+        ? (IsCharging ? "External power" : "—")
         : $"{BatteryPercent}%";
 
     public static RingDevice FromJson(JsonObject node, bool fromDoorbellArray)
@@ -212,7 +212,7 @@ public sealed class RingDevice
         return new RingDevice
         {
             Id = node.Long("id") ?? 0,
-            Name = node.Str("description") ?? node.Str("name") ?? "Dispositivo Ring",
+            Name = node.Str("description") ?? node.Str("name") ?? "Ring device",
             Kind = kind,
             DeviceType = node.Str("device_type"),
             LocationId = node.Str("location_id"),
@@ -261,7 +261,7 @@ public sealed class RingDevice
     {
         if (string.IsNullOrWhiteSpace(kind))
         {
-            return "Dispositivo Ring";
+            return "Ring device";
         }
 
         var text = kind.Replace('_', ' ').Trim();

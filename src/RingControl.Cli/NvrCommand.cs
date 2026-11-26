@@ -37,25 +37,25 @@ internal static class NvrCommand
     private static void PrintHelp()
     {
         Ui.Header("NVR");
-        Ui.Line("Uso: ringcontrol nvr <comando> [opciones]");
+        Ui.Line("Usage: ringcontrol nvr <command> [options]");
         Console.WriteLine();
-        Ui.Line("  run      Arranca el NVR en primer plano (lo normal es usar el servicio)");
-        Ui.Line("  status   Muestra el estado del NVR en ejecución (--json)");
-        Ui.Line("  stop     Detiene el NVR en ejecución");
-        Ui.Line("  config   Muestra la configuración (--init la crea, --json)");
+        Ui.Line("  run      Starts the NVR in the foreground (the service is the usual way)");
+        Ui.Line("  status   Shows the running NVR state (--json)");
+        Ui.Line("  stop     Stops the running NVR");
+        Ui.Line("  config   Shows the configuration (--init creates it, --json)");
         Console.WriteLine();
-        Ui.Line("Opciones de run:");
-        Ui.Line("  --config <archivo>   Configuración alternativa");
-        Ui.Line("  --root <carpeta>     Carpeta de grabaciones");
+        Ui.Line("Run options:");
+        Ui.Line("  --config <file>      Alternative configuration");
+        Ui.Line("  --root <folder>      Recordings folder");
         Ui.Line("  --mode events|continuous|both");
-        Ui.Line("  --device <id,...>    Limita el NVR a esas cámaras");
-        Ui.Line("  --segment <min>      Duración de cada segmento continuo (1-60)");
-        Ui.Line("  --clip <seg>         Duración de los clips por evento (10-600)");
-        Ui.Line("  --retention <días>   Retención (0 = sin límite de días)");
-        Ui.Line("  --max-gb <GB>        Cuota de disco (0 = sin límite)");
-        Ui.Line("  --max-streams <n>    Sesiones simultáneas (1-8)");
+        Ui.Line("  --device <id,...>    Limits the NVR to those cameras");
+        Ui.Line("  --segment <min>      Length of each continuous segment (1-60)");
+        Ui.Line("  --clip <sec>         Length of event clips (10-600)");
+        Ui.Line("  --retention <days>   Retention (0 = no day limit)");
+        Ui.Line("  --max-gb <GB>        Disk quota (0 = no limit)");
+        Ui.Line("  --max-streams <n>    Concurrent sessions (1-8)");
         Ui.Line("  --no-ding / --no-motion / --on-demand");
-        Ui.Line("  --once               Graba un clip de prueba y termina");
+        Ui.Line("  --once               Records one test clip and exits");
         Console.WriteLine();
     }
 
@@ -72,16 +72,16 @@ internal static class NvrCommand
         }
 
         using var log = new DaemonLog(Path.Combine(PlatformPaths.LogsDirectory, "nvr.log"));
-        log.Write($"RingControl NVR {Cli.Version} iniciando (pid {Environment.ProcessId}).");
-        log.Write($"Configuración: {configStore.Path}");
-        log.Write($"Modo {options.Mode} · carpeta {options.RootFolder} · segmentos {options.SegmentMinutes} min · " +
-                  $"clips {options.EventClipSeconds} s · retención {options.RetentionDays} días · " +
-                  $"cuota {NvrStorage.FormatBytes(options.MaxStorageBytes)}");
+        log.Write($"RingControl NVR {Cli.Version} starting (pid {Environment.ProcessId}).");
+        log.Write($"Configuration: {configStore.Path}");
+        log.Write($"Mode {options.Mode} · folder {options.RootFolder} · segments {options.SegmentMinutes} min · " +
+                  $"clips {options.EventClipSeconds} s · retention {options.RetentionDays} days · " +
+                  $"quota {NvrStorage.FormatBytes(options.MaxStorageBytes)}");
 
         if (DaemonStatus.IsAlive(ReadPid()))
         {
-            log.Write("Ya hay otra instancia del NVR en ejecución. Saliendo.");
-            Ui.Error("Ya hay otra instancia del NVR en ejecución.");
+            log.Write("Another NVR instance is already running. Exiting.");
+            Ui.Error("Another NVR instance is already running.");
             return 1;
         }
 
@@ -102,10 +102,10 @@ internal static class NvrCommand
         try
         {
             using var session = CliSession.Open();
-            log.Write($"Sesión de Ring activa para {session.Email ?? session.HardwareId}.");
+            log.Write($"Ring session active for {session.Email ?? session.HardwareId}.");
 
             var devices = await session.Api.GetDevicesAsync(shutdown.Token).ConfigureAwait(false);
-            log.Write($"Cámaras en la cuenta: {devices.Count}.");
+            log.Write($"Cameras in the account: {devices.Count}.");
 
             await using var engine = new NvrEngine(session.Api, options, log.Write);
             await engine.StartAsync(devices, shutdown.Token).ConfigureAwait(false);
@@ -122,7 +122,7 @@ internal static class NvrCommand
                 // Normal shutdown.
             }
 
-            log.Write("Deteniendo el NVR…");
+            log.Write("Stopping the NVR…");
             TryCancel(shutdown);
             await WaitQuietlyAsync(syncTask).ConfigureAwait(false);
             await WaitQuietlyAsync(statusTask).ConfigureAwait(false);
@@ -130,11 +130,11 @@ internal static class NvrCommand
         }
         catch (OperationCanceledException)
         {
-            log.Write("NVR cancelado.");
+            log.Write("NVR cancelled.");
         }
         catch (Exception ex)
         {
-            log.Write("El NVR se detuvo por un error: " + ex);
+            log.Write("The NVR stopped because of an error: " + ex);
             status.Running = false;
             status.UpdatedAt = DateTimeOffset.Now;
             status.Save(StatusPath);
@@ -153,7 +153,7 @@ internal static class NvrCommand
         status.UpdatedAt = DateTimeOffset.Now;
         status.Save(StatusPath);
         DeletePid();
-        log.Write("NVR detenido.");
+        log.Write("NVR stopped.");
         return 0;
     }
 
@@ -162,7 +162,7 @@ internal static class NvrCommand
         options.Mode = NvrMode.Events;
 
         using var log = new DaemonLog(Path.Combine(PlatformPaths.LogsDirectory, "nvr-test.log"));
-        log.Write("Prueba de grabación del NVR (--once).");
+        log.Write("NVR recording test (--once).");
 
         using var session = CliSession.Open();
         var devices = await session.Api.GetDevicesAsync().ConfigureAwait(false);
@@ -175,18 +175,18 @@ internal static class NvrCommand
 
         if (online.Count == 0)
         {
-            throw new CliException("No hay cámaras en línea para probar.");
+            throw new CliException("There are no online cameras to test.");
         }
 
-        Ui.Header("Prueba del NVR");
-        Ui.Info($"Carpeta: {storage.Root}");
+        Ui.Header("NVR test");
+        Ui.Info($"Folder: {storage.Root}");
 
         var seconds = Math.Clamp(args.GetInt("seconds") ?? 10, 5, 60);
         var failures = 0;
 
         foreach (var device in online)
         {
-            Ui.Info($"Grabando {seconds} s de {device.Name}…");
+            Ui.Info($"Recording {seconds} s from {device.Name}…");
 
             await using var recorder = new DeviceRecorder(session.Api, device, options, storage, log.Write);
             var ok = await recorder.RecordNowAsync(TimeSpan.FromSeconds(seconds)).ConfigureAwait(false);
@@ -194,7 +194,7 @@ internal static class NvrCommand
 
             if (!ok || clip is null)
             {
-                Ui.Error($"{device.Name}: no se pudo grabar.");
+                Ui.Error($"{device.Name}: could not record.");
                 failures++;
                 continue;
             }
@@ -205,11 +205,11 @@ internal static class NvrCommand
         Ui.Blank();
         if (failures == 0)
         {
-            Ui.Success("Prueba completada. El NVR puede grabar en esta máquina.");
+            Ui.Success("Test completed. The NVR can record on this machine.");
             return 0;
         }
 
-        Ui.Error($"{failures} cámara(s) fallaron la prueba. Revisa el registro: {log.LogPath}");
+        Ui.Error($"{failures} camera(s) failed the test. Check the log: {log.LogPath}");
         return 1;
     }
 
@@ -233,7 +233,7 @@ internal static class NvrCommand
                 }
                 catch (Exception ex)
                 {
-                    log.Write("No se pudo actualizar la lista de cámaras: " + ex.Message);
+                    log.Write("Could not refresh the camera list: " + ex.Message);
                 }
             }
         }
@@ -316,28 +316,28 @@ internal static class NvrCommand
 
         if (status is null)
         {
-            Ui.Info("No se está ejecutando (no hay estado guardado).");
-            Ui.Info($"Configuración: {configStore.Path}");
+            Ui.Info("Not running (no saved state).");
+            Ui.Info($"Configuration: {configStore.Path}");
             return 0;
         }
 
         if (status.ProcessAlive)
         {
-            Ui.Success($"En ejecución (pid {status.Pid}), modo {status.Mode}.");
+            Ui.Success($"Running (pid {status.Pid}), {status.Mode} mode.");
         }
         else if (status.Running)
         {
-            Ui.Warn($"El proceso {status.Pid} ya no existe. El NVR se detuvo de forma inesperada.");
+            Ui.Warn($"Process {status.Pid} no longer exists. The NVR stopped unexpectedly.");
         }
         else
         {
-            Ui.Info("Detenido.");
+            Ui.Info("Stopped.");
         }
 
-        Ui.Info($"Iniciado:     {status.StartedAt.ToLocalTime():yyyy-MM-dd HH:mm:ss}");
-        Ui.Info($"Actualizado:  {status.UpdatedAt.ToLocalTime():yyyy-MM-dd HH:mm:ss}");
-        Ui.Info($"Carpeta:      {status.RootFolder}");
-        Ui.Info($"Grabaciones:  {status.ClipCount} clips · {NvrStorage.FormatBytes(status.StorageBytes)} · libre {NvrStorage.FormatBytes(status.FreeBytes)}");
+        Ui.Info($"Started:     {status.StartedAt.ToLocalTime():yyyy-MM-dd HH:mm:ss}");
+        Ui.Info($"Updated:     {status.UpdatedAt.ToLocalTime():yyyy-MM-dd HH:mm:ss}");
+        Ui.Info($"Folder:      {status.RootFolder}");
+        Ui.Info($"Recordings:  {status.ClipCount} clips · {NvrStorage.FormatBytes(status.StorageBytes)} · free {NvrStorage.FormatBytes(status.FreeBytes)}");
 
         if (status.Devices.Count > 0)
         {
@@ -351,7 +351,7 @@ internal static class NvrCommand
                 d.LastClipAt?.ToLocalTime().ToString("dd/MM HH:mm") ?? "—",
             }).ToList();
 
-            Ui.Table(rows, "Cámara", "Estado", "Clip actual", "Clips", "Último");
+            Ui.Table(rows, "Camera", "State", "Current clip", "Clips", "Last");
         }
 
         return 0;
@@ -364,7 +364,7 @@ internal static class NvrCommand
 
         if (!DaemonStatus.IsAlive(pid))
         {
-            Ui.Warn("El NVR no está en ejecución.");
+            Ui.Warn("The NVR is not running.");
             DeletePid();
             return 0;
         }
@@ -375,7 +375,7 @@ internal static class NvrCommand
 
             if (!process.ProcessName.Contains("ringcontrol", StringComparison.OrdinalIgnoreCase))
             {
-                throw new CliException($"El proceso {pid} no parece ser RingControl. No se detuvo por seguridad.");
+                throw new CliException($"Process {pid} does not look like RingControl. It was not stopped for safety.");
             }
 
             if (OperatingSystem.IsWindows())
@@ -390,11 +390,11 @@ internal static class NvrCommand
 
             if (!process.WaitForExit(20_000))
             {
-                Ui.Warn("El proceso no terminó a tiempo; se forzó la detención.");
+                Ui.Warn("The process did not exit in time; it was force-stopped.");
                 process.Kill(entireProcessTree: true);
             }
 
-            Ui.Success("NVR detenido.");
+            Ui.Success("NVR stopped.");
             DeletePid();
             return 0;
         }
@@ -404,7 +404,7 @@ internal static class NvrCommand
         }
         catch (Exception ex)
         {
-            throw new CliException("No se pudo detener el NVR: " + ex.Message);
+            throw new CliException("Could not stop the NVR: " + ex.Message);
         }
     }
 
@@ -417,16 +417,16 @@ internal static class NvrCommand
         {
             var defaults = store.Load(createIfMissing: true);
             Ui.Success(existed
-                ? $"La configuración ya existía: {store.Path}"
-                : $"Configuración creada: {store.Path}");
+                ? $"The configuration already existed: {store.Path}"
+                : $"Configuration created: {store.Path}");
             PrintOptions(defaults);
             return 0;
         }
 
         if (!existed)
         {
-            Ui.Warn("No hay configuración del NVR. Créala con: ringcontrol nvr config --init");
-            Ui.Info($"Ruta prevista: {store.Path}");
+            Ui.Warn("No NVR configuration. Create it with: ringcontrol nvr config --init");
+            Ui.Info($"Expected path: {store.Path}");
             return 1;
         }
 
@@ -438,8 +438,8 @@ internal static class NvrCommand
             return 0;
         }
 
-        Ui.Header("Configuración del NVR");
-        Ui.Info($"Archivo: {store.Path}");
+        Ui.Header("NVR configuration");
+        Ui.Info($"File: {store.Path}");
         PrintOptions(options);
         return 0;
     }
@@ -447,18 +447,18 @@ internal static class NvrCommand
     private static void PrintOptions(NvrOptions options)
     {
         Ui.Blank();
-        Ui.Info($"Modo:            {options.Mode}");
-        Ui.Info($"Carpeta:         {options.RootFolder}");
-        Ui.Info($"Segmento:        {options.SegmentMinutes} min");
-        Ui.Info($"Clip por evento: {options.EventClipSeconds} s");
-        Ui.Info($"Consulta:        cada {options.EventPollSeconds} s");
-        Ui.Info($"Retención:       {(options.RetentionDays == 0 ? "sin límite" : options.RetentionDays + " días")}");
-        Ui.Info($"Cuota:           {(options.MaxStorageBytes == 0 ? "sin límite" : NvrStorage.FormatBytes(options.MaxStorageBytes))}");
-        Ui.Info($"Sesiones:        {options.MaxConcurrentStreams}");
-        Ui.Info($"Timbre:          {(options.RecordOnDing ? "grabar" : "no grabar")}");
-        Ui.Info($"Movimiento:      {(options.RecordOnMotion ? "grabar" : "no grabar")}");
-        Ui.Info($"Vista en vivo:   {(options.RecordOnDemand ? "grabar" : "no grabar")}");
-        Ui.Info($"Cámaras:         {(options.DeviceIds.Count == 0 ? "todas" : string.Join(", ", options.DeviceIds))}");
+        Ui.Info($"Mode:            {options.Mode}");
+        Ui.Info($"Folder:          {options.RootFolder}");
+        Ui.Info($"Segment:         {options.SegmentMinutes} min");
+        Ui.Info($"Event clip:      {options.EventClipSeconds} s");
+        Ui.Info($"Poll interval:   every {options.EventPollSeconds} s");
+        Ui.Info($"Retention:       {(options.RetentionDays == 0 ? "no limit" : options.RetentionDays + " days")}");
+        Ui.Info($"Quota:           {(options.MaxStorageBytes == 0 ? "no limit" : NvrStorage.FormatBytes(options.MaxStorageBytes))}");
+        Ui.Info($"Sessions:        {options.MaxConcurrentStreams}");
+        Ui.Info($"Doorbell:        {(options.RecordOnDing ? "record" : "do not record")}");
+        Ui.Info($"Motion:          {(options.RecordOnMotion ? "record" : "do not record")}");
+        Ui.Info($"Live view:       {(options.RecordOnDemand ? "record" : "do not record")}");
+        Ui.Info($"Cameras:         {(options.DeviceIds.Count == 0 ? "all" : string.Join(", ", options.DeviceIds))}");
     }
 
     private static void ApplyOverrides(CliArgs args, NvrOptions options)
@@ -538,7 +538,7 @@ internal static class NvrCommand
         "continuous" or "continuo" or "24/7" => NvrMode.Continuous,
         "both" or "ambos" or "todo" => NvrMode.Both,
         "events" or "eventos" => NvrMode.Events,
-        _ => throw new CliException($"Modo no válido: {value}. Usa events, continuous o both."),
+        _ => throw new CliException($"Invalid mode: {value}. Use events, continuous or both."),
     };
 
     private static List<PosixSignalRegistration> RegisterSignals(CancellationTokenSource shutdown)

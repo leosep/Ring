@@ -62,7 +62,7 @@ public sealed class AppSettings
         }
         catch (Exception ex)
         {
-            AppLog.Error("No se pudo leer la configuración", ex);
+            AppLog.Error("Could not read settings", ex);
             return new AppSettings();
         }
     }
@@ -77,7 +77,7 @@ public sealed class AppSettings
         }
         catch (Exception ex)
         {
-            AppLog.Error("No se pudo guardar la configuración", ex);
+            AppLog.Error("Could not save settings", ex);
         }
     }
 

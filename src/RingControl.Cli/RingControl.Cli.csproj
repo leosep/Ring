@@ -8,11 +8,11 @@
     <AssemblyName>ringcontrol</AssemblyName>
     <RootNamespace>RingControl.Cli</RootNamespace>
     <ApplicationIcon>..\..\assets\ringcontrol.ico</ApplicationIcon>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <Authors>RingControl</Authors>
     <Company>RingControl</Company>
     <Product>RingControl</Product>
-    <Description>NVR y cliente de línea de comandos para Ring (API no oficial).</Description>
+    <Description>NVR and command-line client for Ring (unofficial API).</Description>
     <PublishTrimmed>false</PublishTrimmed>
     <InvariantGlobalization>false</InvariantGlobalization>
   </PropertyGroup>

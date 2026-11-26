@@ -37,7 +37,7 @@
 
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="RingControl" FontSize="16" FontWeight="SemiBold" />
-                    <TextBlock x:Name="HeaderSubtitle" Text="Instalador" FontSize="11"
+                    <TextBlock x:Name="HeaderSubtitle" Text="Installer" FontSize="11"
                                Foreground="{StaticResource MutedBrush}" />
                 </StackPanel>
 
@@ -63,13 +63,13 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="Instalar RingControl" Style="{StaticResource Heading}" />
+                    <TextBlock Grid.Row="0" Text="Install RingControl" Style="{StaticResource Heading}" />
 
                     <TextBlock Grid.Row="1" Margin="0,8,0,18" Style="{StaticResource Muted}"
-                               Text="Vigila tus cámaras y timbres Ring y graba en tu equipo las 24 horas. Se instalan la aplicación de Windows, la herramienta de línea de comandos y el motor NVR." />
+                               Text="Monitor your Ring cameras and doorbells and record on your computer 24/7. The Windows app, the command-line tool, and the NVR engine are installed." />
 
                     <StackPanel Grid.Row="2">
-                        <TextBlock Text="Carpeta de instalación" FontSize="12" FontWeight="SemiBold"
+                        <TextBlock Text="Installation folder" FontSize="12" FontWeight="SemiBold"
                                    Foreground="{StaticResource MutedBrush}" Margin="0,0,0,6" />
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -77,32 +77,32 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBox Grid.Column="0" x:Name="InstallDirBox" Height="36" VerticalContentAlignment="Center" />
-                            <Button Grid.Column="1" x:Name="BrowseButton" Content="Cambiar…" Margin="10,0,0,0"
+                            <Button Grid.Column="1" x:Name="BrowseButton" Content="Change…" Margin="10,0,0,0"
                                     Click="BrowseButton_Click" />
                         </Grid>
                     </StackPanel>
 
                     <StackPanel Grid.Row="3" Margin="0,14,0,0">
-                        <CheckBox x:Name="DesktopCheck" Content="Crear un acceso directo en el escritorio" IsChecked="True" />
-                        <CheckBox x:Name="StartMenuCheck" Content="Añadir RingControl al menú Inicio" IsChecked="True" />
-                        <CheckBox x:Name="PathCheck" Content="Añadir el comando ringcontrol al PATH del usuario" IsChecked="True" />
-                        <CheckBox x:Name="AutostartCheck" Content="Iniciar el NVR automáticamente al iniciar sesión" />
+                        <CheckBox x:Name="DesktopCheck" Content="Create a desktop shortcut" IsChecked="True" />
+                        <CheckBox x:Name="StartMenuCheck" Content="Add RingControl to the Start menu" IsChecked="True" />
+                        <CheckBox x:Name="PathCheck" Content="Add the ringcontrol command to the user PATH" IsChecked="True" />
+                        <CheckBox x:Name="AutostartCheck" Content="Start the NVR automatically at sign-in" />
                     </StackPanel>
 
                     <Border Grid.Row="4" Margin="0,18,0,0" Padding="16" CornerRadius="8"
                             Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}"
                             BorderThickness="1" VerticalAlignment="Top">
                         <StackPanel>
-                            <TextBlock Text="Qué se instala" FontSize="12" FontWeight="SemiBold"
+                            <TextBlock Text="What gets installed" FontSize="12" FontWeight="SemiBold"
                                        Foreground="{StaticResource AccentBrush}" Margin="0,0,0,8" />
                             <TextBlock Style="{StaticResource Muted}" Margin="0,2"
-                                       Text="• RingControl.exe — aplicación de escritorio (monitorización, vista en vivo y grabación)." />
+                                       Text="• RingControl.exe — desktop app (monitoring, live view, and recording)." />
                             <TextBlock Style="{StaticResource Muted}" Margin="0,2"
-                                       Text="• ringcontrol.exe — CLI y NVR sin interfaz para Windows y Linux." />
+                                       Text="• ringcontrol.exe — CLI and headless NVR for Windows and Linux." />
                             <TextBlock Style="{StaticResource Muted}" Margin="0,2"
-                                       Text="• Las grabaciones se guardan en Vídeos\RingControl; la sesión se cifra con DPAPI." />
+                                       Text="• Recordings are saved to Videos\RingControl; the session is encrypted with DPAPI." />
                             <TextBlock Style="{StaticResource Muted}" Margin="0,2"
-                                       Text="• Se puede desinstalar desde Configuración → Aplicaciones." />
+                                       Text="• It can be uninstalled from Settings → Apps." />
                         </StackPanel>
                     </Border>
                 </Grid>
@@ -116,33 +116,33 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="Desinstalar RingControl" Style="{StaticResource Heading}" />
+                    <TextBlock Grid.Row="0" Text="Uninstall RingControl" Style="{StaticResource Heading}" />
 
                     <TextBlock Grid.Row="1" Margin="0,8,0,18" Style="{StaticResource Muted}"
-                               Text="Se eliminarán la aplicación, la CLI, los accesos directos y el inicio automático del NVR. Tus grabaciones y la sesión de Ring se conservan salvo que marques la opción inferior." />
+                               Text="The app, the CLI, the shortcuts, and the NVR autostart will be removed. Your recordings and the Ring session are kept unless you tick the option below." />
 
                     <Border Grid.Row="2" Padding="16" CornerRadius="8" Background="#2A1618"
                             BorderBrush="#5B2A2E" BorderThickness="1">
                         <StackPanel>
-                            <TextBlock Text="Se eliminará" FontSize="12" FontWeight="SemiBold"
+                            <TextBlock Text="Will be removed" FontSize="12" FontWeight="SemiBold"
                                        Foreground="{StaticResource DangerBrush}" Margin="0,0,0,6" />
-                            <TextBlock Style="{StaticResource Muted}" Text="• Aplicación y CLI instalados." />
-                            <TextBlock Style="{StaticResource Muted}" Text="• Accesos directos y entrada del PATH." />
-                            <TextBlock Style="{StaticResource Muted}" Text="• Inicio automático del NVR." />
+                            <TextBlock Style="{StaticResource Muted}" Text="• Installed app and CLI." />
+                            <TextBlock Style="{StaticResource Muted}" Text="• Shortcuts and the PATH entry." />
+                            <TextBlock Style="{StaticResource Muted}" Text="• NVR autostart." />
                         </StackPanel>
                     </Border>
 
                     <StackPanel Grid.Row="3" Margin="0,18,0,0">
-                        <CheckBox x:Name="PurgeCheck" Content="Eliminar también la configuración, la sesión y los registros" />
+                        <CheckBox x:Name="PurgeCheck" Content="Also delete the configuration, the session, and the logs" />
                         <TextBlock Style="{StaticResource Muted}" Margin="26,6,0,0"
-                                   Text="Las grabaciones de vídeo nunca se eliminan automáticamente." />
+                                   Text="Video recordings are never deleted automatically." />
                     </StackPanel>
                 </Grid>
 
                 <!-- Progress -->
                 <Grid x:Name="ProgressPanel" Visibility="Collapsed">
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock x:Name="ProgressTitle" Text="Instalando RingControl…" Style="{StaticResource Heading}"
+                        <TextBlock x:Name="ProgressTitle" Text="Installing RingControl…" Style="{StaticResource Heading}"
                                    HorizontalAlignment="Center" />
                         <TextBlock x:Name="ProgressText" Margin="0,12,0,18" Style="{StaticResource Muted}"
                                    HorizontalAlignment="Center" TextAlignment="Center" />
@@ -158,9 +158,9 @@
                         <TextBlock x:Name="FinishGlyph" Text="✓" FontSize="46" HorizontalAlignment="Center"
                                    Foreground="{StaticResource SuccessBrush}" />
                         <TextBlock x:Name="FinishTitle" Margin="0,10,0,10" Style="{StaticResource Heading}"
-                                   HorizontalAlignment="Center" Text="Instalación completada" />
+                                   HorizontalAlignment="Center" Text="Installation completed" />
                         <TextBlock x:Name="FinishText" Style="{StaticResource Muted}" TextAlignment="Center" />
-                        <CheckBox x:Name="LaunchCheck" Content="Abrir RingControl ahora" IsChecked="True"
+                        <CheckBox x:Name="LaunchCheck" Content="Open RingControl now" IsChecked="True"
                                   HorizontalAlignment="Center" Margin="0,18,0,0" />
                     </StackPanel>
                 </Grid>
@@ -178,15 +178,15 @@
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Column="0" x:Name="StatusText" VerticalAlignment="Center" FontSize="11"
-                               Foreground="{StaticResource MutedBrush}" Text="Listo para instalar." />
+                               Foreground="{StaticResource MutedBrush}" Text="Ready to install." />
 
-                    <Button Grid.Column="1" x:Name="CancelButton" Content="Cancelar" Margin="0,0,10,0"
+                    <Button Grid.Column="1" x:Name="CancelButton" Content="Cancel" Margin="0,0,10,0"
                             Click="CancelButton_Click" />
 
-                    <Button Grid.Column="2" x:Name="ActionButton" Content="Instalar" Style="{StaticResource PrimaryButton}"
+                    <Button Grid.Column="2" x:Name="ActionButton" Content="Install" Style="{StaticResource PrimaryButton}"
                             MinWidth="120" Click="ActionButton_Click" IsDefault="True" />
 
-                    <Button Grid.Column="3" x:Name="FinishButton" Content="Cerrar" Style="{StaticResource PrimaryButton}"
+                    <Button Grid.Column="3" x:Name="FinishButton" Content="Close" Style="{StaticResource PrimaryButton}"
                             MinWidth="120" Visibility="Collapsed" Click="FinishButton_Click" />
                 </Grid>
             </Border>

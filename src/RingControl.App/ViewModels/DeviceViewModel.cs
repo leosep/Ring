@@ -108,7 +108,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
     private bool isConnecting;
 
     [ObservableProperty]
-    private string liveStatus = "Sin vídeo en directo";
+    private string liveStatus = "No live view";
 
     [ObservableProperty]
     private string? liveError;
@@ -157,9 +157,9 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
 
     public bool CanStartLive => !IsLive && !IsConnecting && Device.IsOnline && !Device.LiveViewDisabled;
 
-    public string LiveButtonText => IsLive ? "Detener" : "En directo";
+    public string LiveButtonText => IsLive ? "Stop" : "Live view";
 
-    public string RecordButtonText => IsRecording ? "Detener grabación" : "Grabar";
+    public string RecordButtonText => IsRecording ? "Stop recording" : "Record";
 
     public async Task ActivateAsync()
     {
@@ -201,9 +201,15 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
         _active = false;
         _uiTimer.Stop();
 
+        // Detach the token source before awaiting: a quick reselect of the same device
+        // may start a new activation while the old stream is still closing, and this
+        // method must not dispose the new CancellationTokenSource.
+        var cts = _cts;
+        _cts = null;
+
         try
         {
-            _cts?.Cancel();
+            cts?.Cancel();
         }
         catch
         {
@@ -212,8 +218,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
 
         await StopLiveAsync();
 
-        _cts?.Dispose();
-        _cts = null;
+        cts?.Dispose();
     }
 
     [RelayCommand]
@@ -232,7 +237,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
             await LoadHealthAsync(ct);
             await LoadEventsAsync(ct);
             await LoadSnapshotAsync(force: true, ct);
-            _report($"{Device.Name}: información actualizada.");
+            _report($"{Device.Name}: information refreshed.");
         }
         finally
         {
@@ -261,8 +266,8 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            AppLog.Write($"Estado de {Device.Name}: {ex.Message}");
-            ActionError ??= "No se pudo cargar el estado del dispositivo: " + ex.Message;
+            AppLog.Write($"{Device.Name} status: {ex.Message}");
+            ActionError ??= "Could not load the device status: " + ex.Message;
         }
     }
 
@@ -295,8 +300,8 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            AppLog.Write($"Eventos de {Device.Name}: {ex.Message}");
-            ActionError ??= "No se pudieron cargar los eventos: " + ex.Message;
+            AppLog.Write($"{Device.Name} events: {ex.Message}");
+            ActionError ??= "Could not load the events: " + ex.Message;
         }
     }
 
@@ -345,7 +350,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            AppLog.Write("Miniatura de evento: " + ex.Message);
+            AppLog.Write("Event thumbnail: " + ex.Message);
         }
     }
 
@@ -353,7 +358,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
     {
         if (!Device.MotionDetectionEnabled)
         {
-            SnapshotStatus = "Activa la detección de movimiento para ver instantáneas.";
+            SnapshotStatus = "Enable motion detection to see snapshots.";
             return;
         }
 
@@ -377,17 +382,17 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
             }
 
             SnapshotImage = image;
-            SnapshotStatus = "Actualizada a las " + DateTime.Now.ToString("HH:mm:ss");
+            SnapshotStatus = "Updated at " + DateTime.Now.ToString("HH:mm:ss");
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception ex)
         {
-            AppLog.Write($"Instantánea de {Device.Name}: {ex.Message}");
+            AppLog.Write($"Snapshot of {Device.Name}: {ex.Message}");
             if (force)
             {
-                ActionError = "No se pudo obtener la instantánea: " + ex.Message;
+                ActionError = "Could not get the snapshot: " + ex.Message;
             }
         }
     }
@@ -413,7 +418,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            AppLog.Error("Bucle de instantáneas", ex);
+            AppLog.Error("Snapshot loop", ex);
         }
     }
 
@@ -444,26 +449,26 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
 
         if (!Device.IsOnline)
         {
-            LiveError = "La cámara está sin conexión.";
+            LiveError = "The camera is offline.";
             return;
         }
 
         if (Device.LiveViewDisabled)
         {
-            LiveError = "La vista en vivo está desactivada en los ajustes de Ring.";
+            LiveError = "Live view is disabled in the Ring settings.";
             return;
         }
 
         if (_vlc.LibVlc is null)
         {
-            LiveError = "El reproductor de vídeo no está disponible: " + _vlc.InitError;
+            LiveError = "The video player is not available: " + _vlc.InitError;
             return;
         }
 
         IsConnecting = true;
         LiveError = null;
         ActionError = null;
-        LiveStatus = "Solicitando acceso al vídeo…";
+        LiveStatus = "Requesting access to the video…";
         StreamStats = string.Empty;
         _lastSample = default;
         _lastSampleBytes = 0;
@@ -485,7 +490,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
 
             if (attach == PreviewAttachResult.Busy)
             {
-                LiveError = "El NVR está grabando un evento de esta cámara. Espera unos segundos e inténtalo de nuevo.";
+                LiveError = "The NVR is recording an event from this camera. Wait a few seconds and try again.";
                 await StopLiveAsync();
                 return;
             }
@@ -511,9 +516,9 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            AppLog.Error("Vídeo en directo", ex);
+            AppLog.Error("Live view", ex);
             LiveError = ex is TimeoutException
-                ? "Ring no respondió a tiempo. Inténtalo de nuevo."
+                ? "Ring did not respond in time. Try again."
                 : ex.Message;
             await StopLiveAsync();
         }
@@ -526,7 +531,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
     private async Task StartDirectPreviewAsync(CancellationToken ct)
     {
         var stream = new RingLiveStream(_session.RequireApi(), Device,
-            message => AppLog.Write($"[directo:{Device.Id}] {message}"));
+            message => AppLog.Write($"[live:{Device.Id}] {message}"));
 
         _stream = stream;
         stream.StatusChanged += OnStreamStatusChanged;
@@ -536,15 +541,15 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
 
         if (string.IsNullOrWhiteSpace(stream.SdpFilePath))
         {
-            throw new InvalidOperationException("Ring no devolvió una sesión de vídeo válida.");
+            throw new InvalidOperationException("Ring did not return a valid video session.");
         }
 
-        AppLog.Write($"[directo:{Device.Id}] Abriendo el reproductor con {stream.SdpFilePath} (puerto {stream.LocalVideoPort}).");
-        CreatePlayer(stream.SdpFilePath);
+        AppLog.Write($"[live:{Device.Id}] Opening the player with {stream.SdpFilePath} (port {stream.LocalVideoPort}).");
+        await CreatePlayerAsync(stream.SdpFilePath);
         stream.ForwardEnabled = true;
         IsLive = true;
-        LiveStatus = "Esperando la imagen de la cámara…";
-        _report($"{Device.Name}: vídeo en directo iniciado.");
+        LiveStatus = "Waiting for the camera image…";
+        _report($"{Device.Name}: live view started.");
     }
 
     /// <summary>
@@ -558,15 +563,15 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
 
         if (source is null)
         {
-            LiveStatus = "Esperando la señal del NVR…";
+            LiveStatus = "Waiting for the NVR signal…";
             source = await WaitForPreviewSourceAsync(recorder, ct);
         }
 
-        CreatePlayer(source.SdpFilePath);
-        AppLog.Write($"[directo:{Device.Id}] Compartiendo el SDP del NVR ({source.SdpFilePath}, puerto {source.Port}).");
+        await CreatePlayerAsync(source.SdpFilePath);
+        AppLog.Write($"[live:{Device.Id}] Sharing the NVR SDP ({source.SdpFilePath}, port {source.Port}).");
         IsLive = true;
-        LiveStatus = "Vídeo en directo (compartido con el NVR)";
-        _report($"{Device.Name}: vídeo en directo desde el NVR.");
+        LiveStatus = "Live view (shared with the NVR)";
+        _report($"{Device.Name}: live view from the NVR.");
     }
 
     private async Task<LivePreviewSource> WaitForPreviewSourceAsync(DeviceRecorder recorder, CancellationToken ct)
@@ -586,7 +591,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
             timeout.CancelAfter(TimeSpan.FromSeconds(30));
             using var registration = timeout.Token.Register(() =>
-                tcs.TrySetException(new TimeoutException("El NVR no entregó la señal de vídeo a tiempo.")));
+                tcs.TrySetException(new TimeoutException("The NVR did not deliver the video signal in time.")));
             return await tcs.Task.ConfigureAwait(true);
         }
         finally
@@ -595,18 +600,22 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    private void CreatePlayer(string sdpPath)
+    private async Task CreatePlayerAsync(string sdpPath, CancellationToken ct = default)
     {
         if (_vlc.LibVlc is null)
         {
-            throw new InvalidOperationException("El reproductor de vídeo no está disponible: " + _vlc.InitError);
+            throw new InvalidOperationException("The video player is not available: " + _vlc.InitError);
         }
 
         var media = new Media(_vlc.LibVlc, sdpPath, FromType.FromPath);
-        media.AddOption(":demux=sdp");
+
+        // Do not force ":demux=sdp": LibVLC 3.x has no such demux module and would fail
+        // with "unable to open the MRL". The .sdp extension is auto-detected and the
+        // built-in SDP access opens the RTP stream on the advertised UDP port.
+        //
+        // Do not disable the clock either: ":clock-synchro=0" makes live555 abort with
+        // "no data received in 10s" even while RTP packets are arriving.
         media.AddOption(":network-caching=250");
-        media.AddOption(":clock-jitter=0");
-        media.AddOption(":clock-synchro=0");
 
         var player = new VlcMediaPlayer(media) { EnableHardwareDecoding = false };
         player.EncounteredError += OnPlayerError;
@@ -615,9 +624,76 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
         _player = player;
         MediaPlayer = player;
 
+        // WPF applies binding source changes on the DataBind dispatcher queue, so the
+        // VideoView may not have received the player yet when this method returns. If
+        // Play() runs first, LibVLC has no embedded HWND and opens its own top-level
+        // window (the extra, empty-looking window). Wait until the control reports a
+        // surface, forcing a layout pass and re-binding if necessary.
+        await WaitForVideoSurfaceAsync(player, ct).ConfigureAwait(true);
+
+        if (_player != player)
+        {
+            // A stop/cancel ran while waiting for the surface.
+            throw new OperationCanceledException();
+        }
+
+        if (player.Hwnd == IntPtr.Zero)
+        {
+            AppLog.Write("[live] Warning: the video surface does not have an HWND yet.");
+        }
+
         if (!player.Play())
         {
-            throw new InvalidOperationException("El reproductor no pudo iniciar la reproducción.");
+            throw new InvalidOperationException("The player could not start playback.");
+        }
+    }
+
+    private async Task WaitForVideoSurfaceAsync(VlcMediaPlayer player, CancellationToken ct)
+    {
+        if (player.Hwnd != IntPtr.Zero)
+        {
+            return;
+        }
+
+        var dispatcher = Application.Current?.Dispatcher;
+
+        for (var attempt = 0; attempt < 10 && player.Hwnd == IntPtr.Zero; attempt++)
+        {
+            if (_player != player || _disposed)
+            {
+                return;
+            }
+
+            if (dispatcher is null || dispatcher.CheckAccess())
+            {
+                Application.Current?.MainWindow?.UpdateLayout();
+            }
+
+            if (dispatcher is null)
+            {
+                await Task.Delay(25, ct).ConfigureAwait(true);
+                continue;
+            }
+
+            // Let the pending DataBind operation move the player into the VideoView.
+            await Dispatcher.Yield(DispatcherPriority.DataBind);
+
+            if (_player != player || _disposed)
+            {
+                return;
+            }
+
+            if (Application.Current?.MainWindow is { } window)
+            {
+                window.UpdateLayout();
+            }
+
+            if (player.Hwnd == IntPtr.Zero)
+            {
+                // Rebind with the host handle already created so AttachMediaPlayer runs again.
+                MediaPlayer = null;
+                MediaPlayer = player;
+            }
         }
     }
 
@@ -625,6 +701,9 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
     {
         var player = _player;
         _player = null;
+
+        // Detach before disposing so the VideoView never touches a disposed player.
+        MediaPlayer = null;
 
         if (player is not null)
         {
@@ -648,8 +727,6 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
                 // Ignore.
             }
         }
-
-        MediaPlayer = null;
 
         try
         {
@@ -716,7 +793,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
 
         IsLive = false;
         IsConnecting = false;
-        LiveStatus = "Sin vídeo en directo";
+        LiveStatus = "No live view";
         StreamStats = string.Empty;
     }
 
@@ -736,10 +813,10 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
 
     private void OnPlayerError(object? sender, EventArgs e)
     {
-        AppLog.Write("[directo] LibVLC notificó un error de reproducción.");
+        AppLog.Write("[live] LibVLC reported a playback error.");
         OnUi(() =>
         {
-            LiveError = "El reproductor encontró un problema al mostrar el vídeo.";
+            LiveError = "The player ran into a problem displaying the video.";
             _ = StopLiveAsync();
         });
     }
@@ -754,19 +831,27 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
                 return;
             }
 
-            try
-            {
-                DisposePlayer();
-                CreatePlayer(source.SdpFilePath);
-                LiveStatus = "Vídeo en directo (compartido con el NVR)";
-            }
-            catch (Exception ex)
-            {
-                AppLog.Error("Reanudar el vídeo compartido", ex);
-                LiveError = "No se pudo reanudar el vídeo: " + ex.Message;
-                _ = StopLiveAsync();
-            }
+            DisposePlayer();
+            _ = RestartSharedPlayerAsync(source.SdpFilePath);
         });
+    }
+
+    private async Task RestartSharedPlayerAsync(string sdpPath)
+    {
+        try
+        {
+            await CreatePlayerAsync(sdpPath);
+            if (!_disposed && _sharedPreview)
+            {
+                LiveStatus = "Live view (shared with the NVR)";
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Resume shared live view", ex);
+            LiveError = "Could not resume the live view: " + ex.Message;
+            await StopLiveAsync();
+        }
     }
 
     private void OnPreviewRecorderStatus(object? sender, DeviceRecorderStatus status)
@@ -782,14 +867,14 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
             {
                 case DeviceRecorderState.Connecting:
                 case DeviceRecorderState.Backoff:
-                    LiveStatus = "El NVR está reconectando la cámara…";
+                    LiveStatus = "The NVR is reconnecting the camera…";
                     break;
                 case DeviceRecorderState.Error:
-                    LiveError = "El NVR dejó de recibir vídeo: " + status.Message;
+                    LiveError = "The NVR stopped receiving video: " + status.Message;
                     _ = StopLiveAsync();
                     break;
                 case DeviceRecorderState.Recording when IsLive:
-                    LiveStatus = "Vídeo en directo (compartido con el NVR)";
+                    LiveStatus = "Live view (shared with the NVR)";
                     break;
             }
         });
@@ -809,7 +894,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            AppLog.Write("Grabación H.264: " + ex.Message);
+            AppLog.Write("H.264 recording: " + ex.Message);
         }
     }
 
@@ -824,13 +909,13 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
 
         if (!IsLive)
         {
-            ActionError = "Inicia el vídeo en directo antes de grabar.";
+            ActionError = "Start live view before recording.";
             return;
         }
 
         try
         {
-            var folder = Path.Combine(GetRecordingRoot(), PathUtil.SafeFileName(Device.Name, "camara"));
+            var folder = Path.Combine(GetRecordingRoot(), PathUtil.SafeFileName(Device.Name, "camera"));
             Directory.CreateDirectory(folder);
             var path = Path.Combine(folder, $"{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.h264");
 
@@ -840,11 +925,11 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
 
             IsRecording = true;
             RecordingInfo = "00:00";
-            _report($"{Device.Name}: grabando el vídeo en directo…");
+            _report($"{Device.Name}: recording the live view…");
         }
         catch (Exception ex)
         {
-            ActionError = "No se pudo iniciar la grabación: " + ex.Message;
+            ActionError = "Could not start recording: " + ex.Message;
         }
     }
 
@@ -876,12 +961,12 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
 
         if (!convert || _vlc.LibVlc is null)
         {
-            _report("Grabación guardada: " + path);
+            _report("Recording saved: " + path);
             return;
         }
 
         IsConverting = true;
-        _report("Convirtiendo la grabación a MP4…");
+        _report("Converting the recording to MP4…");
 
         try
         {
@@ -898,12 +983,12 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
             }
 
             LastRecordingPath = mp4;
-            _report("Grabación guardada: " + mp4);
+            _report("Recording saved: " + mp4);
         }
         catch (Exception ex)
         {
-            AppLog.Error("Conversión de la grabación", ex);
-            _report("Se guardó la grabación en formato H.264 (no se pudo crear el MP4): " + Path.GetFileName(path));
+            AppLog.Error("Recording conversion", ex);
+            _report("The recording was saved in H.264 format (MP4 could not be created): " + Path.GetFileName(path));
         }
         finally
         {
@@ -916,15 +1001,15 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
     {
         if (SnapshotImage is not BitmapSource source)
         {
-            ActionError = "Todavía no hay una instantánea para guardar.";
+            ActionError = "There is no snapshot to save yet.";
             return;
         }
 
         var dialog = new SaveFileDialog
         {
-            Title = "Guardar instantánea",
+            Title = "Save snapshot",
             Filter = "Imagen JPEG (*.jpg)|*.jpg",
-            FileName = $"{PathUtil.SafeFileName(Device.Name, "camara")}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.jpg",
+            FileName = $"{PathUtil.SafeFileName(Device.Name, "camera")}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.jpg",
             InitialDirectory = GetSnapshotRoot(),
         };
 
@@ -939,11 +1024,11 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
             encoder.Frames.Add(BitmapFrame.Create(source));
             await using var stream = File.Create(dialog.FileName);
             encoder.Save(stream);
-            _report("Instantánea guardada: " + dialog.FileName);
+            _report("Snapshot saved: " + dialog.FileName);
         }
         catch (Exception ex)
         {
-            ActionError = "No se pudo guardar la instantánea: " + ex.Message;
+            ActionError = "Could not save the snapshot: " + ex.Message;
         }
     }
 
@@ -958,7 +1043,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            ActionError = "No se pudo abrir la carpeta: " + ex.Message;
+            ActionError = "Could not open the folder: " + ex.Message;
         }
     }
 
@@ -974,7 +1059,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
         await RunActionAsync(
             () => _session.RequireApi().SetLightAsync(Device.Id, target),
             () => LightOn = target,
-            target ? "encender la luz" : "apagar la luz");
+            target ? "turn on the light" : "turn off the light");
     }
 
     [RelayCommand]
@@ -989,7 +1074,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
         await RunActionAsync(
             () => _session.RequireApi().SetSirenAsync(Device.Id, target),
             () => SirenOn = target,
-            target ? "activar la sirena" : "desactivar la sirena");
+            target ? "turn on the siren" : "turn off the siren");
     }
 
     [RelayCommand]
@@ -1003,7 +1088,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
                 MotionOn = target;
                 Device.MotionDetectionEnabled = target;
             },
-            target ? "activar la detección de movimiento" : "desactivar la detección de movimiento");
+            target ? "enable motion detection" : "disable motion detection");
 
         if (target)
         {
@@ -1018,7 +1103,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
         await RunActionAsync(
             () => _session.RequireApi().SetChimeAsync(Device.Id, target),
             () => ChimeOn = target,
-            target ? "activar el timbre" : "desactivar el timbre");
+            target ? "turn on the doorbell" : "turn off the doorbell");
     }
 
     [RelayCommand]
@@ -1035,8 +1120,8 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            AppLog.Error("Acción " + description, ex);
-            ActionError = $"No se pudo {description}: {ex.Message}";
+            AppLog.Error("Action " + description, ex);
+            ActionError = $"Could not {description}: {ex.Message}";
         }
     }
 
@@ -1048,14 +1133,14 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
         }
 
         item.IsBusy = true;
-        item.Status = "Obteniendo grabación…";
+        item.Status = "Fetching recording…";
 
         try
         {
             var url = await ResolveClipUrlAsync(item.Event);
             if (string.IsNullOrWhiteSpace(url))
             {
-                item.Status = "Ring no tiene una grabación para este evento.";
+                item.Status = "Ring has no recording for this event.";
                 return;
             }
 
@@ -1069,7 +1154,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            item.Status = "No se pudo abrir la grabación: " + ex.Message;
+            item.Status = "Could not open the recording: " + ex.Message;
         }
         finally
         {
@@ -1089,9 +1174,9 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
 
         var dialog = new SaveFileDialog
         {
-            Title = "Guardar grabación",
-            Filter = "Vídeo MP4 (*.mp4)|*.mp4",
-            FileName = $"{PathUtil.SafeFileName(Device.Name, "camara")}_{item.Event.CreatedAt.ToLocalTime():yyyy-MM-dd_HH-mm-ss}_{PathUtil.SafeFileName(item.KindLabel, "evento")}.mp4",
+            Title = "Save recording",
+            Filter = "MP4 video (*.mp4)|*.mp4",
+            FileName = $"{PathUtil.SafeFileName(Device.Name, "camera")}_{item.Event.CreatedAt.ToLocalTime():yyyy-MM-dd_HH-mm-ss}_{PathUtil.SafeFileName(item.KindLabel, "event")}.mp4",
             InitialDirectory = folder,
         };
 
@@ -1101,14 +1186,14 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
         }
 
         item.IsBusy = true;
-        item.Status = "Obteniendo grabación…";
+        item.Status = "Fetching recording…";
 
         try
         {
             var url = await ResolveClipUrlAsync(item.Event);
             if (string.IsNullOrWhiteSpace(url))
             {
-                item.Status = "Ring no tiene una grabación para este evento.";
+                item.Status = "Ring has no recording for this event.";
                 return;
             }
 
@@ -1117,7 +1202,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
             await _session.RequireApi().DownloadFileAsync(url, dialog.FileName, progress, ct);
 
             item.Status = "Guardado";
-            _report("Grabación guardada: " + dialog.FileName);
+            _report("Recording saved: " + dialog.FileName);
         }
         catch (OperationCanceledException)
         {
@@ -1125,8 +1210,8 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            AppLog.Error("Descarga de grabación", ex);
-            item.Status = "No se pudo guardar: " + ex.Message;
+            AppLog.Error("Recording download", ex);
+            item.Status = "Could not save: " + ex.Message;
         }
         finally
         {
@@ -1153,7 +1238,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
     {
         if (_sharedPreview && _previewRecorder is { IsRunning: false })
         {
-            LiveError = "El NVR se detuvo y el vídeo en directo se cerró.";
+            LiveError = "The NVR stopped and the live view was closed.";
             _ = StopLiveAsync();
         }
 

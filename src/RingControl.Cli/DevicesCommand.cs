@@ -35,14 +35,14 @@ internal static class DevicesCommand
             return 0;
         }
 
-        Ui.Header($"Cámaras ({devices.Count})");
+        Ui.Header($"Cameras ({devices.Count})");
         PrintDevices(devices);
 
         var offline = devices.Count(d => !d.IsOnline);
         if (offline > 0)
         {
             Ui.Blank();
-            Ui.Warn($"{offline} cámara(s) sin conexión.");
+            Ui.Warn($"{offline} camera(s) offline.");
         }
 
         return 0;
@@ -67,31 +67,31 @@ internal static class DevicesCommand
             return 0;
         }
 
-        Ui.Header("Cuenta");
-        Ui.Info($"Correo:      {session.Email ?? "(no guardado)"}");
-        Ui.Info($"ID equipo:   {session.HardwareId}");
-        Ui.Info($"Sesión:      {PlatformPaths.SessionFile}");
+        Ui.Header("Account");
+        Ui.Info($"Email:       {session.Email ?? "(not saved)"}");
+        Ui.Info($"Device ID:   {session.HardwareId}");
+        Ui.Info($"Session:     {PlatformPaths.SessionFile}");
 
-        Ui.Header($"Cámaras ({devices.Count})");
+        Ui.Header($"Cameras ({devices.Count})");
         PrintDevices(devices);
 
         Ui.Header("NVR");
-        Ui.Info($"Configuración: {new NvrConfigStore().Path}");
+        Ui.Info($"Config:      {new NvrConfigStore().Path}");
 
         if (status is null)
         {
-            Ui.Info("Estado:        detenido (no hay estado guardado)");
+            Ui.Info("State:       stopped (no saved state)");
         }
         else if (status.ProcessAlive)
         {
-            Ui.Success($"En ejecución (pid {status.Pid}), modo {status.Mode}.");
-            Ui.Info($"Iniciado:      {status.StartedAt.ToLocalTime():yyyy-MM-dd HH:mm:ss}");
-            Ui.Info($"Grabaciones:   {status.ClipCount} clips · {NvrStorage.FormatBytes(status.StorageBytes)}");
-            Ui.Info($"Carpeta:       {status.RootFolder}");
+            Ui.Success($"Running (pid {status.Pid}), {status.Mode} mode.");
+            Ui.Info($"Started:     {status.StartedAt.ToLocalTime():yyyy-MM-dd HH:mm:ss}");
+            Ui.Info($"Recordings:  {status.ClipCount} clips · {NvrStorage.FormatBytes(status.StorageBytes)}");
+            Ui.Info($"Folder:      {status.RootFolder}");
 
             foreach (var device in status.Devices)
             {
-                var detail = device.State == "Grabando" && !string.IsNullOrWhiteSpace(device.CurrentFile)
+                var detail = device.State == "Recording" && !string.IsNullOrWhiteSpace(device.CurrentFile)
                     ? $" ({Path.GetFileName(device.CurrentFile)}, {device.CurrentSeconds:0} s)"
                     : string.Empty;
 
@@ -100,8 +100,8 @@ internal static class DevicesCommand
         }
         else
         {
-            Ui.Warn($"Detenido. Última actualización: {status.UpdatedAt.ToLocalTime():yyyy-MM-dd HH:mm:ss}.");
-            Ui.Info("Si se cerró de forma inesperada, revisa los registros del servicio.");
+            Ui.Warn($"Stopped. Last update: {status.UpdatedAt.ToLocalTime():yyyy-MM-dd HH:mm:ss}.");
+            Ui.Info("If it closed unexpectedly, check the service logs.");
         }
 
         return 0;
@@ -111,7 +111,7 @@ internal static class DevicesCommand
     {
         if (devices.Count == 0)
         {
-            Ui.Info("No hay dispositivos.");
+            Ui.Info("No devices.");
             return;
         }
 
@@ -122,12 +122,12 @@ internal static class DevicesCommand
             d.ModelLabel,
             d.StatusLabel,
             d.BatteryLabel,
-            d.MotionDetectionEnabled ? "Sí" : "No",
-            d.ChimeEnabled ? "Sí" : "No",
-            d.LiveViewDisabled ? "No" : "Sí",
+            d.MotionDetectionEnabled ? "Yes" : "No",
+            d.ChimeEnabled ? "Yes" : "No",
+            d.LiveViewDisabled ? "No" : "Yes",
         }).ToList();
 
-        Ui.Table(rows, "ID", "Nombre", "Modelo", "Estado", "Batería", "Movim.", "Timbre", "En vivo");
+        Ui.Table(rows, "ID", "Name", "Model", "Status", "Battery", "Motion", "Doorbell", "Live");
     }
 
     internal static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };

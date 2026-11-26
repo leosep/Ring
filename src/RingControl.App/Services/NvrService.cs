@@ -58,7 +58,7 @@ public sealed class NvrService : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            AppLog.Error("No se pudo guardar la configuración del NVR", ex);
+            AppLog.Error("Could not save the NVR settings", ex);
         }
     }
 
@@ -77,8 +77,8 @@ public sealed class NvrService : IAsyncDisposable
             if (externalPid > 0)
             {
                 throw new InvalidOperationException(
-                    $"El NVR ya está en ejecución desde la línea de comandos (proceso {externalPid}). " +
-                    "Detenlo con 'ringcontrol nvr stop' antes de activarlo aquí.");
+                    $"The NVR is already running from the command line (process {externalPid}). " +
+                    "Stop it with 'ringcontrol nvr stop' before starting it here.");
             }
 
             Options.Normalize();
@@ -101,7 +101,7 @@ public sealed class NvrService : IAsyncDisposable
             }
 
             _engine = engine;
-            Log($"NVR activo (modo {ModeLabel(Options.Mode)}).");
+            Log($"NVR active ({ModeLabel(Options.Mode)} mode).");
         }
         finally
         {
@@ -135,7 +135,7 @@ public sealed class NvrService : IAsyncDisposable
                 await engine.DisposeAsync().ConfigureAwait(false);
             }
 
-            Log("NVR detenido.");
+            Log("NVR stopped.");
         }
         finally
         {
@@ -180,9 +180,9 @@ public sealed class NvrService : IAsyncDisposable
 
     public static string ModeLabel(NvrMode mode) => mode switch
     {
-        NvrMode.Continuous => "Continuo (24/7)",
-        NvrMode.Both => "Continuo + eventos",
-        _ => "Solo eventos",
+        NvrMode.Continuous => "Continuous (24/7)",
+        NvrMode.Both => "Continuous + events",
+        _ => "Events only",
     };
 
     /// <summary>

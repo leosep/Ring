@@ -33,7 +33,7 @@ public sealed partial class NvrClipViewModel : ObservableObject
     public string TriggerLabel => Clip.TriggerLabel;
 
     public string TimeLabel => Clip.StartedAt.ToLocalTime()
-        .ToString("ddd d MMM · HH:mm:ss", new CultureInfo("es-ES"));
+        .ToString("ddd d MMM · HH:mm:ss", new CultureInfo("en-US"));
 
     public string DetailLabel
     {
@@ -102,9 +102,9 @@ public sealed partial class NvrViewModel : ObservableObject, IAsyncDisposable
 
         Modes = new[]
         {
-            new NvrModeOption(NvrMode.Events, "Eventos"),
-            new NvrModeOption(NvrMode.Continuous, "Continuo"),
-            new NvrModeOption(NvrMode.Both, "Ambos"),
+            new NvrModeOption(NvrMode.Events, "Events"),
+            new NvrModeOption(NvrMode.Continuous, "Continuous"),
+            new NvrModeOption(NvrMode.Both, "Both"),
         };
 
         selectedMode = Modes.FirstOrDefault(m => m.Mode == _service.Options.Mode) ?? Modes[0];
@@ -137,10 +137,10 @@ public sealed partial class NvrViewModel : ObservableObject, IAsyncDisposable
     private string? errorMessage;
 
     [ObservableProperty]
-    private string usageLabel = "Calculando…";
+    private string usageLabel = "Calculating…";
 
     [ObservableProperty]
-    private string clipsLabel = "Sin grabaciones";
+    private string clipsLabel = "No recordings";
 
     [ObservableProperty]
     private string freeLabel = "—";
@@ -152,7 +152,7 @@ public sealed partial class NvrViewModel : ObservableObject, IAsyncDisposable
     private string retentionLabel = string.Empty;
 
     [ObservableProperty]
-    private string deviceStatusLabel = "Sin cámaras activas";
+    private string deviceStatusLabel = "No active cameras";
 
     [ObservableProperty]
     private string? lastMessage;
@@ -175,9 +175,9 @@ public sealed partial class NvrViewModel : ObservableObject, IAsyncDisposable
 
     public DeviceRecorder? GetRecorder(long deviceId) => _service.GetRecorder(deviceId);
 
-    public string StatusLabel => IsRunning ? "Grabando" : "Detenido";
+    public string StatusLabel => IsRunning ? "Recording" : "Stopped";
 
-    public string ToggleButtonText => IsRunning ? "Detener NVR" : "Iniciar NVR";
+    public string ToggleButtonText => IsRunning ? "Stop NVR" : "Start NVR";
 
     partial void OnSelectedModeChanged(NvrModeOption value)
     {
@@ -205,12 +205,12 @@ public sealed partial class NvrViewModel : ObservableObject, IAsyncDisposable
                 .ConfigureAwait(true);
 
             RetentionLabel = BuildRetentionLabel();
-            _report($"NVR: modo {option.Label.ToLowerInvariant()}.");
+            _report($"NVR: {option.Label.ToLowerInvariant()} mode.");
         }
         catch (Exception ex)
         {
-            AppLog.Error("Cambiar el modo del NVR", ex);
-            ErrorMessage = "No se pudo cambiar el modo: " + ex.Message;
+            AppLog.Error("Change the NVR mode", ex);
+            ErrorMessage = "Could not change the mode: " + ex.Message;
         }
         finally
         {
@@ -235,21 +235,21 @@ public sealed partial class NvrViewModel : ObservableObject, IAsyncDisposable
             {
                 await _service.StopAsync().ConfigureAwait(true);
                 IsRunning = false;
-                _report("NVR detenido.");
+                _report("NVR stopped.");
             }
             else
             {
                 var devices = await GetDevicesAsync().ConfigureAwait(true);
                 await _service.StartAsync(devices).ConfigureAwait(true);
                 IsRunning = true;
-                _report($"NVR iniciado en modo {NvrService.ModeLabel(_service.Options.Mode).ToLowerInvariant()}.");
+                _report($"NVR started in {NvrService.ModeLabel(_service.Options.Mode).ToLowerInvariant()} mode.");
             }
 
             await RefreshAsync().ConfigureAwait(true);
         }
         catch (Exception ex)
         {
-            AppLog.Error("Iniciar o detener el NVR", ex);
+            AppLog.Error("Start or stop the NVR", ex);
             ErrorMessage = ex.Message;
             IsRunning = _service.IsRunning;
         }
@@ -273,12 +273,12 @@ public sealed partial class NvrViewModel : ObservableObject, IAsyncDisposable
             var devices = await GetDevicesAsync().ConfigureAwait(true);
             await _service.StartAsync(devices).ConfigureAwait(true);
             IsRunning = true;
-            _report($"NVR iniciado en modo {NvrService.ModeLabel(_service.Options.Mode).ToLowerInvariant()}.");
+            _report($"NVR started in {NvrService.ModeLabel(_service.Options.Mode).ToLowerInvariant()} mode.");
         }
         catch (Exception ex)
         {
-            AppLog.Error("Inicio automático del NVR", ex);
-            ErrorMessage = "No se pudo iniciar el NVR automáticamente: " + ex.Message;
+            AppLog.Error("NVR autostart", ex);
+            ErrorMessage = "Could not start the NVR automatically: " + ex.Message;
         }
         finally
         {
@@ -324,8 +324,8 @@ public sealed partial class NvrViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            AppLog.Error("Cambiar la carpeta del NVR", ex);
-            ErrorMessage = "No se pudo cambiar la carpeta del NVR: " + ex.Message;
+            AppLog.Error("Change the NVR folder", ex);
+            ErrorMessage = "Could not change the NVR folder: " + ex.Message;
         }
     }
 
@@ -347,8 +347,8 @@ public sealed partial class NvrViewModel : ObservableObject, IAsyncDisposable
             UsageLabel = $"{NvrStorage.FormatBytes(usage.Bytes)} · {usage.ClipCount} clip(s)";
             FreeLabel = usage.TotalBytes > 0 ? NvrStorage.FormatBytes(usage.FreeBytes) : "—";
             ClipsLabel = usage.ClipCount == 0
-                ? "Sin grabaciones"
-                : $"{usage.ClipCount} grabación(es) · {NvrStorage.FormatBytes(usage.Bytes)}";
+                ? "No recordings"
+                : $"{usage.ClipCount} recording(s) · {NvrStorage.FormatBytes(usage.Bytes)}";
 
             var recent = clips.Take(200).Select(clip => new NvrClipViewModel(clip, this)).ToList();
             Clips.Clear();
@@ -361,7 +361,7 @@ public sealed partial class NvrViewModel : ObservableObject, IAsyncDisposable
 
             var statuses = _service.GetDeviceStatuses();
             DeviceStatusLabel = statuses.Count == 0
-                ? (IsRunning ? "Conectando con las cámaras…" : "Sin cámaras activas")
+                ? (IsRunning ? "Connecting to the cameras…" : "No active cameras")
                 : string.Join("  ·  ", statuses.Select(s => $"{s.DeviceName}: {s.StateLabel}"));
 
             RetentionLabel = BuildRetentionLabel();
@@ -370,7 +370,7 @@ public sealed partial class NvrViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            AppLog.Error("Actualizar el estado del NVR", ex);
+            AppLog.Error("Refresh the NVR state", ex);
         }
         finally
         {
@@ -386,13 +386,13 @@ public sealed partial class NvrViewModel : ObservableObject, IAsyncDisposable
             IsBusy = true;
             var removed = await Task.Run(() => _service.EnforceRetention()).ConfigureAwait(true);
             _report(removed == 0
-                ? "NVR: no hay grabaciones que eliminar según la retención."
-                : $"NVR: se eliminaron {removed} grabación(es) antiguas.");
+                ? "NVR: there are no recordings to delete according to retention."
+                : $"NVR: deleted {removed} old recording(s).");
             await RefreshAsync().ConfigureAwait(true);
         }
         catch (Exception ex)
         {
-            ErrorMessage = "No se pudo aplicar la retención: " + ex.Message;
+            ErrorMessage = "Could not apply retention: " + ex.Message;
         }
         finally
         {
@@ -420,15 +420,15 @@ public sealed partial class NvrViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            ErrorMessage = "No se pudo abrir la grabación: " + ex.Message;
+            ErrorMessage = "Could not open the recording: " + ex.Message;
         }
     }
 
     public void DeleteClip(NvrClipViewModel item)
     {
         var confirm = MessageBox.Show(
-            $"¿Eliminar la grabación de {item.DeviceName} del {item.TimeLabel}?\n\nEsta acción no se puede deshacer.",
-            "Eliminar grabación",
+            $"Delete the {item.DeviceName} recording from {item.TimeLabel}?\n\nThis action cannot be undone.",
+            "Delete recording",
             MessageBoxButton.YesNo,
             MessageBoxImage.Question);
 
@@ -439,13 +439,13 @@ public sealed partial class NvrViewModel : ObservableObject, IAsyncDisposable
 
         if (!_service.DeleteClip(item.Clip))
         {
-            ErrorMessage = "No se pudo eliminar la grabación.";
+            ErrorMessage = "Could not delete the recording.";
             return;
         }
 
         Clips.Remove(item);
         HasClips = Clips.Count > 0;
-        _report("Grabación eliminada.");
+        _report("Recording deleted.");
         _ = RefreshAsync();
     }
 
@@ -475,16 +475,16 @@ public sealed partial class NvrViewModel : ObservableObject, IAsyncDisposable
         var pid = NvrService.FindExternalDaemonPid();
         HasExternalDaemon = pid > 0 && !_service.IsRunning;
         ExternalDaemonText = HasExternalDaemon
-            ? $"Hay un NVR en segundo plano (CLI) en ejecución, proceso {pid}. El NVR de esta ventana está detenido para no duplicar la grabación."
+            ? $"A background NVR (CLI) is running, process {pid}. The NVR in this window is stopped to avoid duplicate recording."
             : null;
     }
 
     private string BuildRetentionLabel()
     {
         var options = _service.Options;
-        var retention = options.RetentionDays == 0 ? "sin límite de días" : $"{options.RetentionDays} días";
+        var retention = options.RetentionDays == 0 ? "no day limit" : $"{options.RetentionDays} days";
         var quota = options.MaxStorageBytes == 0
-            ? "sin cuota"
+            ? "no quota"
             : NvrStorage.FormatBytes(options.MaxStorageBytes);
 
         return $"{retention} · {quota}";
@@ -499,7 +499,7 @@ public sealed partial class NvrViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            AppLog.Error("Abrir la carpeta del NVR", ex);
+            AppLog.Error("Open the NVR folder", ex);
         }
     }
 
@@ -514,6 +514,8 @@ public sealed partial class NvrViewModel : ObservableObject, IAsyncDisposable
         _timer.Stop();
         _service.Message -= OnServiceMessage;
 
-        await _service.DisposeAsync().ConfigureAwait(false);
+        // Keep the continuation on the UI thread: device view models raise property
+        // changes and stop timers while being disposed.
+        await _service.DisposeAsync();
     }
 }

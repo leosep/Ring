@@ -19,7 +19,7 @@ public static class LiveSdp
         var videoIndex = Array.FindIndex(lines, line => line.StartsWith("m=video ", StringComparison.OrdinalIgnoreCase));
         if (videoIndex < 0)
         {
-            throw new InvalidOperationException("Ring no ha negociado una pista de vídeo para este dispositivo.");
+            throw new InvalidOperationException("Ring did not negotiate a video track for this device.");
         }
 
         var mediaParts = lines[videoIndex].Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -48,7 +48,7 @@ public static class LiveSdp
 
         if (selected is null || !int.TryParse(selected, NumberStyles.Integer, CultureInfo.InvariantCulture, out var payloadType))
         {
-            throw new InvalidOperationException("No se ha podido determinar el formato de vídeo de Ring.");
+            throw new InvalidOperationException("Could not determine Ring's video format.");
         }
 
         var builder = new StringBuilder();

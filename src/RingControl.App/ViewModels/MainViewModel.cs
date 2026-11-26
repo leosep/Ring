@@ -48,7 +48,7 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
 
     public bool ShowEmptyState => !IsLoading && Devices.Count == 0;
 
-    public string AccountLabel => string.IsNullOrWhiteSpace(_settings.RememberedEmail) ? "Cuenta de Ring" : _settings.RememberedEmail!;
+    public string AccountLabel => string.IsNullOrWhiteSpace(_settings.RememberedEmail) ? "Ring account" : _settings.RememberedEmail!;
 
     public string AccountInitial => string.IsNullOrWhiteSpace(AccountLabel) ? "R" : AccountLabel[..1].ToUpperInvariant();
 
@@ -96,7 +96,9 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
 
             foreach (var device in Devices)
             {
-                await device.DeactivateAsync();
+                // Dispose, not just deactivate: a refresh creates new view models and the
+                // old ones would otherwise leak their timers and subscriptions.
+                await device.DisposeAsync();
             }
 
             Devices.Clear();
@@ -110,16 +112,16 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
             SelectedDevice = Devices.FirstOrDefault(d => d.Device.Id == preferredId) ?? Devices.FirstOrDefault();
 
             StatusMessage = Devices.Count == 0
-                ? "No se encontraron cámaras ni timbres en esta cuenta."
-                : $"{Devices.Count} dispositivo(s) disponibles.";
+                ? "No cameras or doorbells were found in this account."
+                : $"{Devices.Count} device(s) available.";
 
             OnPropertyChanged(nameof(ShowEmptyState));
         }
         catch (Exception ex)
         {
-            AppLog.Error("Cargar dispositivos", ex);
+            AppLog.Error("Load devices", ex);
             ErrorMessage = ex.Message;
-            StatusMessage = "No se pudieron cargar los dispositivos.";
+            StatusMessage = "Could not load the devices.";
             OnPropertyChanged(nameof(ShowEmptyState));
         }
         finally
@@ -136,8 +138,8 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
     private void Logout()
     {
         var result = MessageBox.Show(
-            "¿Quieres cerrar la sesión de Ring en este equipo?\n\nSe eliminará la sesión guardada y tendrás que volver a iniciar sesión.",
-            "Cerrar sesión",
+            "Do you want to sign out of Ring on this computer?\n\nThe saved session will be deleted and you will have to sign in again.",
+            "Sign out",
             MessageBoxButton.YesNo,
             MessageBoxImage.Question);
 

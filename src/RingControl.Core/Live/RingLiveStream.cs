@@ -75,6 +75,8 @@ public sealed class RingLiveStream : IAsyncDisposable
     private int _stopRequested;
     private LiveStreamState _state = LiveStreamState.Idle;
     private int _firstVideoPacket;
+    private int _forwardLogged;
+    private int _forwardErrorLogged;
     private long _packetCount;
     private long _byteCount;
     private uint _remoteSsrc;
@@ -128,7 +130,7 @@ public sealed class RingLiveStream : IAsyncDisposable
     {
         if (_ws is not null)
         {
-            throw new InvalidOperationException("La sesión en directo ya está iniciada.");
+            throw new InvalidOperationException("The live session is already started.");
         }
 
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -137,11 +139,11 @@ public sealed class RingLiveStream : IAsyncDisposable
 
         try
         {
-            SetState(LiveStreamState.RequestingTicket, "Solicitando acceso al vídeo…");
+            SetState(LiveStreamState.RequestingTicket, "Requesting access to the video…");
             _ticket = await _api.GetSignalTicketAsync(ct).ConfigureAwait(false);
-            Log("Ticket de señalización obtenido.");
+            Log("Signalling ticket obtained.");
 
-            SetState(LiveStreamState.Connecting, "Conectando con Ring…");
+            SetState(LiveStreamState.Connecting, "Connecting to Ring…");
             _ws = new ClientWebSocket();
             _ws.Options.SetRequestHeader("User-Agent", "android:com.ringapp");
             _ws.Options.KeepAliveInterval = TimeSpan.FromSeconds(20);
@@ -153,10 +155,10 @@ public sealed class RingLiveStream : IAsyncDisposable
                 $"&token={Uri.EscapeDataString(_ticket)}");
 
             await _ws.ConnectAsync(uri, ct).ConfigureAwait(false);
-            Log("WebSocket de señalización conectado.");
+            Log("Signalling WebSocket connected.");
             _receiveTask = Task.Run(() => ReceiveLoopAsync(ct), CancellationToken.None);
 
-            SetState(LiveStreamState.Negotiating, "Negociando el vídeo…");
+            SetState(LiveStreamState.Negotiating, "Negotiating the video…");
             CreatePeerConnection();
 
             var offer = _pc!.createOffer();
@@ -182,7 +184,7 @@ public sealed class RingLiveStream : IAsyncDisposable
             await FlushLocalIceAsync(ct).ConfigureAwait(false);
 
             var answer = await WithTimeoutAsync(_answerTcs.Task, TimeSpan.FromSeconds(30), ct).ConfigureAwait(false);
-            Log("Respuesta SDP recibida.");
+            Log("SDP answer received.");
 
             _pc.setRemoteDescription(new RTCSessionDescriptionInit
             {
@@ -198,16 +200,16 @@ public sealed class RingLiveStream : IAsyncDisposable
             VideoPayloadType = payloadType;
             SdpFilePath = Path.Combine(Path.GetTempPath(), $"ring-live-{Guid.NewGuid():N}.sdp");
             await File.WriteAllTextAsync(SdpFilePath, sdp, ct).ConfigureAwait(false);
-            Log($"SDP local preparado (puerto {LocalVideoPort}, payload {payloadType}{(string.IsNullOrWhiteSpace(fmtp) ? string.Empty : ", " + fmtp)}).");
+            Log($"Local SDP prepared (port {LocalVideoPort}, payload {payloadType}{(string.IsNullOrWhiteSpace(fmtp) ? string.Empty : ", " + fmtp)}).");
 
             await TryActivateAsync(ct).ConfigureAwait(false);
             StartLoops(ct);
 
-            SetState(LiveStreamState.WaitingForVideo, "Esperando la imagen de la cámara…");
+            SetState(LiveStreamState.WaitingForVideo, "Waiting for the camera image…");
         }
         catch (Exception ex)
         {
-            Log("Error al iniciar el vídeo: " + ex.Message);
+            Log("Error starting the video: " + ex.Message);
             SetState(LiveStreamState.Failed, DescribeError(ex));
             await StopAsync().ConfigureAwait(false);
             throw;
@@ -262,21 +264,21 @@ public sealed class RingLiveStream : IAsyncDisposable
 
         _pc.onconnectionstatechange += state =>
         {
-            Log("Estado WebRTC: " + state);
+            Log("WebRTC state: " + state);
             if (state == RTCPeerConnectionState.connected)
             {
-                SetState(LiveStreamState.Streaming, "Vídeo en directo");
+                SetState(LiveStreamState.Streaming, "Live view");
             }
             else if (state == RTCPeerConnectionState.failed)
             {
-                SetState(LiveStreamState.Failed, "No se pudo establecer la conexión de vídeo (ICE).");
-                _answerTcs.TrySetException(new InvalidOperationException("La conexión ICE con Ring ha fallado."));
+                SetState(LiveStreamState.Failed, "Could not establish the video connection (ICE).");
+                _answerTcs.TrySetException(new InvalidOperationException("The ICE connection with Ring failed."));
                 _ = StopAsync();
             }
             else if (state == RTCPeerConnectionState.closed)
             {
-                Log("Estado WebRTC: closed" + (_stopRequested == 0 ? " (cierre inesperado)" : string.Empty));
-                SetState(LiveStreamState.Stopped, "Vídeo detenido");
+                Log("WebRTC state: closed" + (_stopRequested == 0 ? " (unexpected close)" : string.Empty));
+                SetState(LiveStreamState.Stopped, "Video stopped");
             }
         };
 
@@ -304,7 +306,7 @@ public sealed class RingLiveStream : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            Log("No se pudo enviar un candidato ICE: " + ex.Message);
+            Log("Could not send an ICE candidate: " + ex.Message);
         }
     }
 
@@ -342,8 +344,8 @@ public sealed class RingLiveStream : IAsyncDisposable
 
         if (Interlocked.Exchange(ref _firstVideoPacket, 1) == 0)
         {
-            Log("Primer paquete de vídeo recibido.");
-            SetState(LiveStreamState.Streaming, "Vídeo en directo");
+            Log("First video packet received.");
+            SetState(LiveStreamState.Streaming, "Live view");
             FirstVideoPacket?.Invoke(this, EventArgs.Empty);
         }
 
@@ -353,7 +355,7 @@ public sealed class RingLiveStream : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            Log("Error procesando un paquete H264: " + ex.Message);
+            Log("Error processing an H264 packet: " + ex.Message);
         }
 
         if (!ForwardEnabled || LocalVideoPort <= 0 || _udp is null)
@@ -365,10 +367,18 @@ public sealed class RingLiveStream : IAsyncDisposable
         {
             var bytes = packet.GetBytes();
             _udp.Send(bytes, bytes.Length, new IPEndPoint(IPAddress.Loopback, LocalVideoPort));
+
+            if (Interlocked.Exchange(ref _forwardLogged, 1) == 0)
+            {
+                Log($"Forwarding RTP to the local player at 127.0.0.1:{LocalVideoPort}.");
+            }
         }
-        catch
+        catch (Exception ex)
         {
-            // The local player may not be listening yet; drop the packet.
+            if (Interlocked.Exchange(ref _forwardErrorLogged, 1) == 0)
+            {
+                Log("Could not forward RTP to the local player: " + ex.Message);
+            }
         }
     }
 
@@ -415,15 +425,15 @@ public sealed class RingLiveStream : IAsyncDisposable
         {
             if (_stopRequested == 0)
             {
-                Log("El WebSocket de señalización se cerró: " + ex.Message);
-                SetState(LiveStreamState.Failed, "Se perdió la conexión con Ring.");
+                Log("The signalling WebSocket closed: " + ex.Message);
+                SetState(LiveStreamState.Failed, "The connection with Ring was lost.");
             }
         }
         finally
         {
             if (_stopRequested == 0 && State is not (LiveStreamState.Failed or LiveStreamState.Stopped))
             {
-                SetState(LiveStreamState.Stopped, "Vídeo detenido");
+                SetState(LiveStreamState.Stopped, "Video stopped");
             }
         }
     }
@@ -459,7 +469,7 @@ public sealed class RingLiveStream : IAsyncDisposable
             if (_sessionId is null)
             {
                 _sessionId = sessionId;
-                Log("Sesión de vídeo creada: " + sessionId);
+                Log("Video session created: " + sessionId);
                 await TryActivateAsync(ct).ConfigureAwait(false);
             }
             else if (!string.Equals(_sessionId, sessionId, StringComparison.Ordinal))
@@ -517,10 +527,10 @@ public sealed class RingLiveStream : IAsyncDisposable
             case "notification":
             {
                 var text = body.Str("text");
-                Log("Notificación de Ring: " + text);
+                Log("Ring notification: " + text);
                 if (string.Equals(text, "camera_connected", StringComparison.OrdinalIgnoreCase))
                 {
-                    SetState(LiveStreamState.Streaming, "Cámara conectada");
+                    SetState(LiveStreamState.Streaming, "Camera connected");
                 }
 
                 return;
@@ -530,8 +540,8 @@ public sealed class RingLiveStream : IAsyncDisposable
             {
                 var reason = body.Node("reason")?.Str("text");
                 var message = string.IsNullOrWhiteSpace(reason)
-                    ? "Ring cerró la sesión de vídeo."
-                    : "Ring cerró la sesión: " + reason;
+                    ? "Ring closed the video session."
+                    : "Ring closed the session: " + reason;
                 Log(message);
                 SetState(LiveStreamState.Failed, message);
                 _answerTcs.TrySetException(new InvalidOperationException(message));
@@ -543,7 +553,7 @@ public sealed class RingLiveStream : IAsyncDisposable
                 return;
 
             default:
-                Log("Mensaje de señalización no reconocido: " + method);
+                Log("Unrecognised signalling message: " + method);
                 return;
         }
     }
@@ -560,7 +570,7 @@ public sealed class RingLiveStream : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            Log("No se pudo aplicar un candidato ICE remoto: " + ex.Message);
+            Log("Could not apply a remote ICE candidate: " + ex.Message);
         }
     }
 
@@ -587,7 +597,7 @@ public sealed class RingLiveStream : IAsyncDisposable
         }
 
         _activated = true;
-        Log("Activando la sesión de vídeo.");
+        Log("Activating the video session.");
         await SendSessionMessageAsync("activate_session", null, ct).ConfigureAwait(false);
         await SendSessionMessageAsync("stream_options", new JsonObject
         {
@@ -665,7 +675,7 @@ public sealed class RingLiveStream : IAsyncDisposable
             }
             catch (Exception ex)
             {
-                Log("Bucle de ping detenido: " + ex.Message);
+                Log("Ping loop stopped: " + ex.Message);
             }
         }, CancellationToken.None);
 
@@ -684,7 +694,7 @@ public sealed class RingLiveStream : IAsyncDisposable
             }
             catch (Exception ex)
             {
-                Log("Bucle de keyframe detenido: " + ex.Message);
+                Log("Keyframe loop stopped: " + ex.Message);
             }
         }, CancellationToken.None);
     }
@@ -714,7 +724,7 @@ public sealed class RingLiveStream : IAsyncDisposable
             return;
         }
 
-        Log("Deteniendo la sesión de vídeo.");
+        Log("Stopping the video session.");
 
         try
         {
@@ -799,7 +809,7 @@ public sealed class RingLiveStream : IAsyncDisposable
 
             if (State is not LiveStreamState.Failed)
             {
-                SetState(LiveStreamState.Stopped, "Vídeo detenido");
+                SetState(LiveStreamState.Stopped, "Video stopped");
             }
         }
         finally
@@ -836,15 +846,15 @@ public sealed class RingLiveStream : IAsyncDisposable
             return await task.ConfigureAwait(false);
         }
 
-        throw new TimeoutException("Ring no respondió a la solicitud de vídeo a tiempo.");
+        throw new TimeoutException("Ring did not answer the video request in time.");
     }
 
     private static string DescribeError(Exception ex) => ex switch
     {
-        TimeoutException => "Ring no respondió a tiempo. Inténtalo de nuevo.",
+        TimeoutException => "Ring did not respond in time. Try again.",
         RingApiException api => api.Message,
-        WebSocketException => "No se pudo conectar con el servicio de vídeo de Ring.",
-        _ => "No se pudo iniciar el vídeo: " + ex.Message,
+        WebSocketException => "Could not connect to Ring's video service.",
+        _ => "Could not start the video: " + ex.Message,
     };
 
     public async ValueTask DisposeAsync()

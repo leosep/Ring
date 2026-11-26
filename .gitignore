@@ -1,4 +1,4 @@
-# Salidas de compilaciÃ³n
+# Build output
 bin/
 obj/
 artifacts/
@@ -8,9 +8,9 @@ src/RingControl.Setup/payload.zip
 *.suo
 .vs/
 
-# Registros y temporales
+# Logs and temporary files
 *.log
 *.tmp
 
-# Export de sesión de OpenCode (no es parte del proyecto)
+# OpenCode session export (not part of the project)
 app-wpf-para-timbre-ring.json

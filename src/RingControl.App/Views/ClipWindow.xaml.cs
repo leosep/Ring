@@ -41,7 +41,7 @@ public partial class ClipWindow : Window
 
         if (_vlc.LibVlc is null)
         {
-            ShowStatus("El reproductor de vídeo no está disponible: " + _vlc.InitError, isError: true);
+            ShowStatus("The video player is not available: " + _vlc.InitError, isError: true);
             return;
         }
 
@@ -79,18 +79,27 @@ public partial class ClipWindow : Window
                 SeekBar.Value = 0;
             });
             _player.EncounteredError += (_, _) => OnUi(() =>
-                ShowStatus("No se pudo reproducir la grabación.", isError: true));
+                ShowStatus("Could not play the recording.", isError: true));
 
             Video.MediaPlayer = _player;
 
+            // The native surface must exist before Play(), otherwise LibVLC opens a
+            // separate top-level window instead of drawing inside the app.
+            if (_player.Hwnd == IntPtr.Zero)
+            {
+                Video.UpdateLayout();
+                Video.MediaPlayer = null;
+                Video.MediaPlayer = _player;
+            }
+
             if (!_player.Play())
             {
-                ShowStatus("No se pudo iniciar la reproducción.", isError: true);
+                ShowStatus("Could not start playback.", isError: true);
             }
         }
         catch (Exception ex)
         {
-            ShowStatus("No se pudo abrir la grabación: " + ex.Message, isError: true);
+            ShowStatus("Could not open the recording: " + ex.Message, isError: true);
         }
     }
 

@@ -84,7 +84,7 @@ internal static class Cli
         }
         catch (RingControl.Core.Api.RingApiException ex)
         {
-            Ui.Error("Ring devolvió un error: " + ex.Message);
+            Ui.Error("Ring returned an error: " + ex.Message);
             if (Environment.GetEnvironmentVariable("RINGCONTROL_DEBUG") == "1")
             {
                 Console.Error.WriteLine(ex);
@@ -94,12 +94,12 @@ internal static class Cli
         }
         catch (OperationCanceledException)
         {
-            Ui.Warn("Operación cancelada.");
+            Ui.Warn("Operation canceled.");
             return 130;
         }
         catch (Exception ex)
         {
-            Ui.Error("Error inesperado: " + ex.Message);
+            Ui.Error("Unexpected error: " + ex.Message);
 
             if (Environment.GetEnvironmentVariable("RINGCONTROL_DEBUG") == "1")
             {
@@ -114,7 +114,7 @@ internal static class Cli
 
     private static int Unknown(string command)
     {
-        Ui.Error($"Comando desconocido: {command}");
+        Ui.Error($"Unknown command: {command}");
         PrintHelp();
         return 2;
     }
@@ -123,43 +123,43 @@ internal static class Cli
     {
         var store = new RingControl.Core.Security.SessionStore();
         store.Clear();
-        Ui.Success("Sesión eliminada de este equipo.");
+        Ui.Success("Session removed from this computer.");
         return 0;
     }
 
     private static void PrintHelp()
     {
         Console.WriteLine();
-        Ui.Line($"RingControl {Version} · NVR y cliente para Ring (API no oficial)");
+        Ui.Line($"RingControl {Version} · NVR and Ring client (unofficial API)");
         Console.WriteLine();
-        Ui.Line("Uso: ringcontrol <comando> [opciones]");
+        Ui.Line("Usage: ringcontrol <command> [options]");
         Console.WriteLine();
-        Ui.Line("Comandos:");
-        Ui.Line("  login                Inicia sesión en Ring (guarda solo el refresh token)");
-        Ui.Line("  logout               Borra la sesión guardada");
-        Ui.Line("  devices              Lista cámaras y timbres (--json)");
-        Ui.Line("  status               Estado de la cuenta y del NVR");
-        Ui.Line("  snapshot [cámara]    Guarda una instantánea JPEG (--out archivo.jpg)");
-        Ui.Line("  record [cámara]      Graba un clip ahora (--seconds 30, --root carpeta)");
-        Ui.Line("  clips                Lista grabaciones locales (--prune, --json)");
+        Ui.Line("Commands:");
+        Ui.Line("  login                Sign in to Ring (stores only the refresh token)");
+        Ui.Line("  logout               Delete the saved session");
+        Ui.Line("  devices              List cameras and doorbells (--json)");
+        Ui.Line("  status               Account and NVR status");
+        Ui.Line("  snapshot [camera]    Save a JPEG snapshot (--out file.jpg)");
+        Ui.Line("  record [camera]      Record a clip now (--seconds 30, --root folder)");
+        Ui.Line("  clips                List local recordings (--prune, --json)");
         Console.WriteLine();
         Ui.Line("NVR:");
-        Ui.Line("  nvr run              Arranca el NVR en primer plano");
-        Ui.Line("  nvr status           Muestra el estado del NVR (--json)");
-        Ui.Line("  nvr stop             Detiene el NVR en ejecución");
-        Ui.Line("  nvr config           Muestra la configuración (--init la crea, --json)");
+        Ui.Line("  nvr run              Start the NVR in the foreground");
+        Ui.Line("  nvr status           Show the NVR status (--json)");
+        Ui.Line("  nvr stop             Stop the running NVR");
+        Ui.Line("  nvr config           Show the configuration (--init creates it, --json)");
         Console.WriteLine();
-        Ui.Line("Opciones de nvr run:");
-        Ui.Line("  --config <archivo>   Configuración alternativa (por defecto nvr.json)");
-        Ui.Line("  --root <carpeta>     Carpeta de grabaciones");
+        Ui.Line("nvr run options:");
+        Ui.Line("  --config <file>      Alternative configuration (default nvr.json)");
+        Ui.Line("  --root <folder>      Recordings folder");
         Ui.Line("  --mode events|continuous|both");
-        Ui.Line("  --device <id,...>    Limita el NVR a esas cámaras");
-        Ui.Line("  --segment <min>      Duración de cada segmento continuo");
-        Ui.Line("  --clip <seg>         Duración de los clips por evento");
-        Ui.Line("  --retention <días>   Retención (0 = sin límite de días)");
-        Ui.Line("  --max-gb <GB>        Cuota de disco (0 = sin límite)");
+        Ui.Line("  --device <id,...>    Limit the NVR to those cameras");
+        Ui.Line("  --segment <min>      Duration of each continuous segment");
+        Ui.Line("  --clip <sec>         Duration of event clips");
+        Ui.Line("  --retention <days>   Retention (0 = no day limit)");
+        Ui.Line("  --max-gb <GB>        Disk quota (0 = no limit)");
         Console.WriteLine();
-        Ui.Line("Cámara: ID o parte del nombre. Con una sola cámara se usa automáticamente.");
+        Ui.Line("Camera: ID or part of the name. With a single camera it is used automatically.");
         Ui.Line("Variables: RING_EMAIL, RING_PASSWORD, RING_2FA_CODE, RINGCONTROL_DEBUG=1");
         Console.WriteLine();
     }

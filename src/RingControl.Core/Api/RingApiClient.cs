@@ -124,7 +124,7 @@ public sealed class RingApiClient : IDisposable
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
             throw new RingApiException(
-                "La cámara no envió una instantánea a tiempo. Ring bloquea las instantáneas cuando la detección de movimiento está desactivada.",
+                "The camera did not send a snapshot in time. Ring blocks snapshots while motion detection is disabled.",
                 null,
                 null,
                 new TimeoutException());
@@ -315,7 +315,7 @@ public sealed class RingApiClient : IDisposable
         var ticket = root?["ticket"]?.GetValue<string>();
         if (string.IsNullOrWhiteSpace(ticket))
         {
-            throw new RingApiException("Ring no devolvió un ticket para iniciar el vídeo en directo.");
+            throw new RingApiException("Ring did not return a ticket to start the live view.");
         }
 
         return ticket;
@@ -418,7 +418,7 @@ public sealed class RingApiClient : IDisposable
         {
             var status = response.StatusCode;
             response.Dispose();
-            throw new RingApiException($"No se pudo descargar el archivo (HTTP {(int)status}).", status);
+            throw new RingApiException($"Could not download the file (HTTP {(int)status}).", status);
         }
 
         return response;
@@ -459,7 +459,7 @@ public sealed class RingApiClient : IDisposable
             }
             catch (Exception ex)
             {
-                throw new RingApiException("No se pudo conectar con los servidores de Ring.", null, null, ex);
+                throw new RingApiException("Could not connect to the Ring servers.", null, null, ex);
             }
 
             if (response.StatusCode == HttpStatusCode.Unauthorized && attempt == 0)
@@ -584,7 +584,7 @@ public sealed class RingApiClient : IDisposable
         }
         catch (Exception ex)
         {
-            throw new RingApiException("Ring devolvió una respuesta que no se pudo interpretar.", response.StatusCode, text, ex);
+            throw new RingApiException("Ring returned a response that could not be parsed.", response.StatusCode, text, ex);
         }
     }
 
@@ -627,11 +627,11 @@ public sealed class RingApiClient : IDisposable
 
         return status switch
         {
-            HttpStatusCode.Unauthorized => "La sesión con Ring ha caducado. Vuelve a iniciar sesión.",
-            HttpStatusCode.Forbidden => "Ring ha denegado esta operación para tu cuenta.",
-            HttpStatusCode.NotFound => "Ring no encontró el dispositivo o el recurso solicitado.",
-            HttpStatusCode.TooManyRequests => "Ring ha limitado las solicitudes. Espera un momento.",
-            _ => $"Ring devolvió un error (HTTP {(int)status}){(string.IsNullOrWhiteSpace(detail) ? "." : $": {detail}")}",
+            HttpStatusCode.Unauthorized => "The Ring session has expired. Sign in again.",
+            HttpStatusCode.Forbidden => "Ring denied this operation for your account.",
+            HttpStatusCode.NotFound => "Ring did not find the device or the requested resource.",
+            HttpStatusCode.TooManyRequests => "Ring has rate-limited the requests. Wait a moment.",
+            _ => $"Ring returned an error (HTTP {(int)status}){(string.IsNullOrWhiteSpace(detail) ? "." : $": {detail}")}",
         };
     }
 

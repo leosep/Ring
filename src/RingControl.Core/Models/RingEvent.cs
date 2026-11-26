@@ -27,17 +27,17 @@ public sealed class RingEvent
 
     public string KindLabel => Kind.ToLowerInvariant() switch
     {
-        "ding" => "Timbre",
-        "motion" => "Movimiento",
-        "on_demand" => "Vista en vivo",
-        "alarm" => "Alarma",
-        "on_demand_link" => "Vista en vivo",
-        "door_activity" => "Actividad en la puerta",
-        "key_access" => "Acceso con llave",
-        "offline_footage" => "Sin conexión",
-        "offline_motion" => "Movimiento sin conexión",
-        "deleted_footage" => "Grabación eliminada",
-        _ => "Evento",
+        "ding" => "Doorbell",
+        "motion" => "Motion",
+        "on_demand" => "Live view",
+        "alarm" => "Alarm",
+        "on_demand_link" => "Live view",
+        "door_activity" => "Door activity",
+        "key_access" => "Key access",
+        "offline_footage" => "Offline",
+        "offline_motion" => "Offline motion",
+        "deleted_footage" => "Deleted recording",
+        _ => "Event",
     };
 
     public string Glyph => Kind.ToLowerInvariant() switch
@@ -49,16 +49,16 @@ public sealed class RingEvent
         _ => "\uE7C3",            // Event
     };
 
-    public string TimeLabel => CreatedAt.ToLocalTime().ToString("ddd d MMM · HH:mm", new CultureInfo("es-ES"));
+    public string TimeLabel => CreatedAt.ToLocalTime().ToString("ddd d MMM · HH:mm", new CultureInfo("en-US"));
 
     public string DurationLabel => DurationSeconds > 0 ? $"{DurationSeconds} s" : string.Empty;
 
     public string StateLabel => State switch
     {
-        "timed_out" => "Sin respuesta",
-        "completed" => "Completado",
-        "ready" => "Disponible",
-        "processing" => "Procesando",
+        "timed_out" => "No answer",
+        "completed" => "Completed",
+        "ready" => "Available",
+        "processing" => "Processing",
         _ => string.Empty,
     };
 

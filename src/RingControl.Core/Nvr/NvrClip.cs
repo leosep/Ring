@@ -40,15 +40,15 @@ public sealed class NvrClip
     [JsonIgnore]
     public string TriggerLabel => Trigger switch
     {
-        RecordingTrigger.Ding => "Timbre",
-        RecordingTrigger.Motion => "Movimiento",
-        RecordingTrigger.OnDemand => "Vista en vivo",
+        RecordingTrigger.Ding => "Doorbell",
+        RecordingTrigger.Motion => "Motion",
+        RecordingTrigger.OnDemand => "Live view",
         RecordingTrigger.Manual => "Manual",
         _ => "Continuo",
     };
 
     [JsonIgnore]
-    public string TimeLabel => StartedAt.ToLocalTime().ToString("ddd d MMM · HH:mm:ss", new CultureInfo("es-ES"));
+    public string TimeLabel => StartedAt.ToLocalTime().ToString("ddd d MMM · HH:mm:ss", new CultureInfo("en-US"));
 
     [JsonIgnore]
     public string DurationLabel => DurationSeconds > 0

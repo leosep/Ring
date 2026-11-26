@@ -19,7 +19,7 @@ public partial class SettingsWindow : Window
         AutoStartCheck.IsChecked = settings.AutoStartLive;
         NvrAutoStartCheck.IsChecked = settings.NvrAutoStart;
 
-        var interval = Math.Clamp(settings.SnapshotIntervalSeconds, 10, 180);
+        var interval = Math.Clamp(settings.SnapshotIntervalSeconds, 10, 600);
         IntervalSlider.Value = interval;
         IntervalText.Text = $"{interval} s";
         IntervalSlider.ValueChanged += (_, e) => IntervalText.Text = $"{(int)e.NewValue} s";
@@ -29,7 +29,7 @@ public partial class SettingsWindow : Window
     {
         var dialog = new OpenFolderDialog
         {
-            Title = "Selecciona la carpeta de grabaciones",
+            Title = "Select the recordings folder",
             InitialDirectory = Directory.Exists(FolderBox.Text) ? FolderBox.Text : AppSettings.DefaultRecordingFolder,
         };
 
@@ -41,7 +41,7 @@ public partial class SettingsWindow : Window
 
     private void Save_Click(object sender, RoutedEventArgs e)
     {
-        var folder = FolderBox.Text.Trim();
+        var folder = Environment.ExpandEnvironmentVariables(FolderBox.Text.Trim());
         if (string.IsNullOrWhiteSpace(folder))
         {
             folder = AppSettings.DefaultRecordingFolder;
@@ -54,8 +54,8 @@ public partial class SettingsWindow : Window
         catch (Exception ex)
         {
             MessageBox.Show(
-                "No se puede usar esa carpeta:\n\n" + ex.Message,
-                "Ajustes",
+                "That folder cannot be used:\n\n" + ex.Message,
+                "Settings",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
             return;

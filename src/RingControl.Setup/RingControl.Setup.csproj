@@ -15,11 +15,11 @@
     <AssemblyName>RingControlSetup</AssemblyName>
     <RootNamespace>RingControl.Setup</RootNamespace>
     <ApplicationIcon>..\..\assets\ringcontrol.ico</ApplicationIcon>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <Authors>RingControl</Authors>
     <Company>RingControl</Company>
     <Product>RingControl</Product>
-    <Description>Instalador de RingControl: GUI de Windows, CLI y NVR.</Description>
+    <Description>RingControl installer: Windows GUI, CLI, and NVR.</Description>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 

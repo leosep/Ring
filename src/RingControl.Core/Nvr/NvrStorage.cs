@@ -28,7 +28,7 @@ public sealed class NvrStorage
     public string Root => _root;
 
     public string DeviceFolder(long deviceId, string deviceName)
-        => Path.Combine(_root, $"{SafeName(deviceName, "camara")}_{deviceId}");
+        => Path.Combine(_root, $"{SafeName(deviceName, "camera")}_{deviceId}");
 
     public string CreateClipPath(long deviceId, string deviceName, DateTimeOffset startedAt, RecordingTrigger trigger)
     {
@@ -126,7 +126,7 @@ public sealed class NvrStorage
             {
                 FilePath = file,
                 DeviceId = deviceId ?? 0,
-                DeviceName = Path.GetFileName(Path.GetDirectoryName(file)) ?? "Cámara",
+                DeviceName = Path.GetFileName(Path.GetDirectoryName(file)) ?? "Camera",
                 StartedAt = started,
                 EndedAt = started.AddSeconds(0),
                 Bytes = info.Length,

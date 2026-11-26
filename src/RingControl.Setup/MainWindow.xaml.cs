@@ -17,20 +17,20 @@ public partial class MainWindow : Window
 
         _uninstall = uninstall;
         VersionText.Text = "v" + Installer.Version;
-        HeaderSubtitle.Text = uninstall ? "Desinstalador" : "Instalador";
+        HeaderSubtitle.Text = uninstall ? "Uninstaller" : "Installer";
         InstallDirBox.Text = Installer.InstalledDir ?? InstallOptions.DefaultDir;
 
         if (uninstall)
         {
             InstallPanel.Visibility = Visibility.Collapsed;
             UninstallPanel.Visibility = Visibility.Visible;
-            ActionButton.Content = "Desinstalar";
+            ActionButton.Content = "Uninstall";
 
             var installed = Installer.IsInstalled;
             ActionButton.IsEnabled = installed;
             StatusText.Text = installed
-                ? $"Instalado en {Installer.InstalledDir}"
-                : "RingControl no está instalado en este equipo.";
+                ? $"Installed to {Installer.InstalledDir}"
+                : "RingControl is not installed on this computer.";
         }
     }
 
@@ -46,7 +46,7 @@ public partial class MainWindow : Window
     {
         var dialog = new OpenFolderDialog
         {
-            Title = "Elige la carpeta de instalación",
+            Title = "Choose the installation folder",
             InitialDirectory = Directory.Exists(InstallDirBox.Text) ? InstallDirBox.Text : InstallOptions.DefaultDir,
         };
 
@@ -66,8 +66,8 @@ public partial class MainWindow : Window
         if (_uninstall)
         {
             var confirm = MessageBox.Show(this,
-                "¿Desinstalar RingControl de este equipo?\n\nLas grabaciones de vídeo se conservan.",
-                "Desinstalar RingControl", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                "Uninstall RingControl from this computer?\n\nVideo recordings are kept.",
+                "Uninstall RingControl", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
             if (confirm != MessageBoxResult.Yes)
             {
@@ -99,13 +99,13 @@ public partial class MainWindow : Window
         FinishPanel.Visibility = Visibility.Collapsed;
         ProgressPanel.Visibility = Visibility.Visible;
 
-        ProgressTitle.Text = _uninstall ? "Desinstalando RingControl…" : "Instalando RingControl…";
-        ProgressText.Text = "Preparando…";
+        ProgressTitle.Text = _uninstall ? "Uninstalling RingControl…" : "Installing RingControl…";
+        ProgressText.Text = "Preparing…";
         ProgressBar.Value = 0;
         ProgressPercent.Text = "0 %";
-        StatusText.Text = "No cierres esta ventana.";
+        StatusText.Text = "Do not close this window.";
         ActionButton.IsEnabled = false;
-        CancelButton.Content = "Cancelar";
+        CancelButton.Content = "Cancel";
 
         var progress = new Progress<SetupProgress>(p =>
         {
@@ -132,7 +132,7 @@ public partial class MainWindow : Window
         {
             _busy = false;
             ResetToIdle();
-            StatusText.Text = "Operación cancelada.";
+            StatusText.Text = "Operation cancelled.";
         }
         catch (Exception ex)
         {
@@ -155,32 +155,32 @@ public partial class MainWindow : Window
         {
             FinishGlyph.Text = "✓";
             FinishGlyph.Foreground = (System.Windows.Media.Brush)FindResource("SuccessBrush");
-            FinishTitle.Text = _uninstall ? "Desinstalación completada" : "Instalación completada";
+            FinishTitle.Text = _uninstall ? "Uninstallation completed" : "Installation completed";
 
             if (_uninstall)
             {
                 FinishText.Text = options.PurgeData
-                    ? "RingControl se ha eliminado, incluida la configuración y la sesión. Las grabaciones se conservan en Vídeos\\RingControl."
-                    : "RingControl se ha eliminado. La configuración y las grabaciones se conservan.";
+                    ? "RingControl has been removed, including the configuration and the session. Recordings are kept in Videos\\RingControl."
+                    : "RingControl has been removed. The configuration and recordings are kept.";
 
                 LaunchCheck.Visibility = Visibility.Collapsed;
-                StatusText.Text = "Desinstalación completada.";
+                StatusText.Text = "Uninstallation completed.";
             }
             else
             {
                 FinishText.Text =
-                    "RingControl está listo. Inicia sesión con tu cuenta de Ring; si quieres grabar sin abrir la ventana, activa el inicio automático del NVR al instalar o desde Ajustes.";
+                    "RingControl is ready. Sign in with your Ring account; if you want to record without opening the window, enable NVR autostart while installing or from Settings.";
 
                 LaunchCheck.Visibility = Visibility.Visible;
-                StatusText.Text = $"Instalado en {options.InstallDir}";
+                StatusText.Text = $"Installed to {options.InstallDir}";
             }
         }
         else
         {
             FinishGlyph.Text = "✕";
             FinishGlyph.Foreground = (System.Windows.Media.Brush)FindResource("DangerBrush");
-            FinishTitle.Text = _uninstall ? "No se pudo desinstalar" : "No se pudo instalar";
-            FinishText.Text = error ?? "Se produjo un error inesperado.";
+            FinishTitle.Text = _uninstall ? "Uninstall failed" : "Install failed";
+            FinishText.Text = error ?? "An unexpected error occurred.";
             LaunchCheck.Visibility = Visibility.Collapsed;
             StatusText.Text = "Error.";
         }
@@ -193,7 +193,7 @@ public partial class MainWindow : Window
         ActionButton.Visibility = Visibility.Visible;
         ActionButton.IsEnabled = true;
         CancelButton.Visibility = Visibility.Visible;
-        CancelButton.Content = "Cancelar";
+        CancelButton.Content = "Cancel";
         FinishButton.Visibility = Visibility.Collapsed;
 
         if (_uninstall)
@@ -216,7 +216,7 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "No se pudo abrir RingControl: " + ex.Message, "RingControl",
+                MessageBox.Show(this, "Could not open RingControl: " + ex.Message, "RingControl",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
@@ -228,7 +228,7 @@ public partial class MainWindow : Window
     {
         if (_busy)
         {
-            StatusText.Text = "Cancelando…";
+            StatusText.Text = "Cancelling…";
             _cts?.Cancel();
             return;
         }

@@ -30,15 +30,14 @@ public partial class App : Application
         {
             if (Args.Uninstall)
             {
-                await Installer.UninstallAsync(Args.ToOptions(), new Progress<SetupProgress>(), CancellationToken.None)
-                    .ConfigureAwait(false);
+                await Installer.UninstallAsync(Args.ToOptions(), new Progress<SetupProgress>(), CancellationToken.None);
             }
             else
             {
-                await Installer.InstallAsync(Args.ToOptions(), new Progress<SetupProgress>(), CancellationToken.None)
-                    .ConfigureAwait(false);
+                await Installer.InstallAsync(Args.ToOptions(), new Progress<SetupProgress>(), CancellationToken.None);
             }
 
+            // Shutdown must run on the UI thread, so do not use ConfigureAwait(false) here.
             Shutdown(0);
         }
         catch (Exception ex)

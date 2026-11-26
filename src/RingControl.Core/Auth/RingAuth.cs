@@ -86,7 +86,7 @@ public sealed class RingAuthClient
         }
         catch (Exception ex)
         {
-            throw new RingAuthException("No se pudo conectar con Ring. Comprueba tu conexión a Internet.", ex);
+            throw new RingAuthException("Could not connect to Ring. Check your Internet connection.", ex);
         }
 
         using (response)
@@ -113,7 +113,7 @@ public sealed class RingAuthClient
 
             if (string.IsNullOrWhiteSpace(accessToken) || string.IsNullOrWhiteSpace(refreshToken))
             {
-                throw new RingAuthException("Ring devolvió una respuesta de autenticación no válida. Inténtalo de nuevo.");
+                throw new RingAuthException("Ring returned an invalid authentication response. Try again.");
             }
 
             return new RingTokens(accessToken, refreshToken, DateTimeOffset.UtcNow.AddSeconds(expiresIn));
@@ -130,10 +130,10 @@ public sealed class RingAuthClient
             var tsv = node?["tsv_state"]?.GetValue<string>();
             var phone = node?["phone"]?.GetValue<string>();
             var prompt = tsv == "totp"
-                ? "Introduce el código de 6 dígitos de tu aplicación de autenticación."
+                ? "Enter the 6-digit code from your authenticator app."
                 : !string.IsNullOrWhiteSpace(phone)
-                    ? $"Ring ha enviado un código a {phone}. Introdúcelo para continuar."
-                    : "Ring ha enviado un código de verificación. Introdúcelo para continuar.";
+                    ? $"Ring sent a code to {phone}. Enter it to continue."
+                    : "Ring sent a verification code. Enter it to continue.";
 
             return new RingAuthException(prompt)
             {
@@ -145,17 +145,17 @@ public sealed class RingAuthClient
 
         if (status == HttpStatusCode.BadRequest && error?.StartsWith("Verification Code", StringComparison.OrdinalIgnoreCase) == true)
         {
-            return new RingAuthException("El código de verificación no es válido. Inténtalo de nuevo.")
+            return new RingAuthException("The verification code is not valid. Try again.")
             {
                 RequiresTwoFactor = true,
-                Prompt = "El código de verificación no es válido. Inténtalo de nuevo.",
+                Prompt = "The verification code is not valid. Try again.",
                 StatusCode = (int)status,
             };
         }
 
         if (status == HttpStatusCode.TooManyRequests)
         {
-            return new RingAuthException("Ring ha bloqueado temporalmente las solicitudes. Espera unos minutos e inténtalo de nuevo.")
+            return new RingAuthException("Ring temporarily blocked the requests. Wait a few minutes and try again.")
             {
                 StatusCode = (int)status,
             };
@@ -165,13 +165,13 @@ public sealed class RingAuthClient
         {
             if (isRefresh)
             {
-                return new RingAuthException("La sesión guardada ha caducado. Vuelve a iniciar sesión.")
+                return new RingAuthException("The saved session has expired. Sign in again.")
                 {
                     StatusCode = (int)status,
                 };
             }
 
-            return new RingAuthException("Correo o contraseña incorrectos.")
+            return new RingAuthException("Incorrect email or password.")
             {
                 StatusCode = (int)status,
             };
@@ -183,7 +183,7 @@ public sealed class RingAuthClient
             detail = rawBody.Trim();
         }
 
-        return new RingAuthException($"Ring rechazó la autenticación (HTTP {(int)status}){(string.IsNullOrWhiteSpace(detail) ? "." : $": {detail}")}")
+        return new RingAuthException($"Ring rejected the authentication (HTTP {(int)status}){(string.IsNullOrWhiteSpace(detail) ? "." : $": {detail}")}")
         {
             StatusCode = (int)status,
         };

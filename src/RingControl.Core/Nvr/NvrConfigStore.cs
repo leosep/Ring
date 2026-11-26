@@ -34,9 +34,20 @@ public sealed class NvrConfigStore
             return defaults;
         }
 
-        var options = NvrOptions.FromJson(File.ReadAllText(_path));
-        options.Normalize();
-        return options;
+        try
+        {
+            var options = NvrOptions.FromJson(File.ReadAllText(_path));
+            options.Normalize();
+            return options;
+        }
+        catch (Exception)
+        {
+            // A corrupt or partially written file must not prevent the app from
+            // starting. Fall back to defaults; they are persisted on the next save.
+            var defaults = new NvrOptions();
+            defaults.Normalize();
+            return defaults;
+        }
     }
 
     public void Save(NvrOptions options)

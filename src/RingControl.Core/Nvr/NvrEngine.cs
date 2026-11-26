@@ -74,7 +74,7 @@ public sealed class NvrEngine : IAsyncDisposable
                 continue;
             }
 
-            Log($"NVR desactivado para {recorder.Device.Name} (sin conexión o ya no seleccionada).");
+            Log($"NVR disabled for {recorder.Device.Name} (offline or no longer selected).");
             recorder.StatusChanged -= OnRecorderStatus;
             _recorders.Remove(recorder);
 
@@ -106,12 +106,12 @@ public sealed class NvrEngine : IAsyncDisposable
             recorder.StatusChanged += OnRecorderStatus;
             _recorders.Add(recorder);
             await recorder.StartAsync().ConfigureAwait(false);
-            Log($"NVR activado para {device.Name} ({_options.Mode}).");
+            Log($"NVR enabled for {device.Name} ({_options.Mode}).");
         }
 
         if (_recorders.Count == 0)
         {
-            Log("No hay cámaras disponibles para el NVR (sin conexión o filtradas por configuración).");
+            Log("No cameras available for the NVR (offline or filtered by settings).");
         }
     }
 
@@ -164,12 +164,12 @@ public sealed class NvrEngine : IAsyncDisposable
                     var removed = EnforceRetention();
                     if (removed > 0)
                     {
-                        Log($"Retención: se eliminaron {removed} grabación(es) antiguas.");
+                        Log($"Retention: deleted {removed} old recording(s).");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log("Error aplicando la retención: " + ex.Message);
+                    Log("Error applying retention: " + ex.Message);
                 }
 
                 await Task.Delay(TimeSpan.FromMinutes(10), ct).ConfigureAwait(false);

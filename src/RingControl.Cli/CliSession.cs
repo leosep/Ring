@@ -118,7 +118,7 @@ internal sealed class CliSession : IDisposable
     {
         var store = new SessionStore();
         var stored = store.Load()
-                     ?? throw new CliException("No hay ninguna sesión de Ring guardada.\nEjecuta primero: ringcontrol login");
+                     ?? throw new CliException("No Ring session is saved.\nRun first: ringcontrol login");
 
         var hardwareId = string.IsNullOrWhiteSpace(stored.HardwareId) ? EnsureHardwareId() : stored.HardwareId;
         var http = CreateHttp();
@@ -132,7 +132,7 @@ internal sealed class CliSession : IDisposable
         catch (RingAuthException ex)
         {
             http.Dispose();
-            throw new CliException(ex.Message + "\nEjecuta: ringcontrol login", 3);
+            throw new CliException(ex.Message + "\nRun: ringcontrol login", 3);
         }
 
         var api = new RingApiClient(http, auth, hardwareId, tokens);
@@ -164,16 +164,16 @@ internal sealed class CliSession : IDisposable
         }
         catch (RingAuthException ex) when (ex.RequiresTwoFactor && string.IsNullOrWhiteSpace(twoFactorCode))
         {
-            output.WriteLine("  " + (ex.Prompt ?? "Ring requiere un código de verificación."));
+            output.WriteLine("  " + (ex.Prompt ?? "Ring requires a verification code."));
 
             var code = Console.IsInputRedirected
                 ? Console.ReadLine()?.Trim()
-                : Ui.PromptSecret("Código de verificación");
+                : Ui.PromptSecret("Verification code");
 
             if (string.IsNullOrWhiteSpace(code))
             {
                 http.Dispose();
-                throw new CliException("No se introdujo el código de verificación.", 3);
+                throw new CliException("No verification code was entered.", 3);
             }
 
             try
@@ -209,7 +209,7 @@ internal sealed class CliSession : IDisposable
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("No se pudo guardar la sesión: " + ex.Message);
+            Console.Error.WriteLine("Could not save the session: " + ex.Message);
         }
     }
 
@@ -221,7 +221,7 @@ internal sealed class CliSession : IDisposable
 
         if (devices.Count == 0)
         {
-            throw new CliException("La cuenta no tiene cámaras ni timbres Ring.");
+            throw new CliException("The account has no Ring cameras or doorbells.");
         }
 
         if (string.IsNullOrWhiteSpace(selector) || selector is "0" or "first" or "primera")
@@ -231,7 +231,7 @@ internal sealed class CliSession : IDisposable
                 return devices[0];
             }
 
-            throw new CliException("Hay varias cámaras. Indica el ID o el nombre:\n" +
+            throw new CliException("There are several cameras. Specify the ID or the name:\n" +
                                    string.Join("\n", devices.Select(d => $"  {d.Id}  {d.Name}")));
         }
 
@@ -251,8 +251,8 @@ internal sealed class CliSession : IDisposable
         return matches.Count switch
         {
             1 => matches[0],
-            0 => throw new CliException($"No se encontró ninguna cámara que coincida con \"{selector}\"."),
-            _ => throw new CliException($"\"{selector}\" coincide con varias cámaras. Usa el ID:\n" +
+            0 => throw new CliException($"No camera matches \"{selector}\"."),
+            _ => throw new CliException($"\"{selector}\" matches several cameras. Use the ID:\n" +
                                         string.Join("\n", matches.Select(d => $"  {d.Id}  {d.Name}"))),
         };
     }

@@ -85,7 +85,7 @@ internal static class Ui
             return defaultValue;
         }
 
-        var hint = defaultValue ? "S/n" : "s/N";
+        var hint = defaultValue ? "Y/n" : "y/N";
         Console.Write($"  {label} [{hint}]: ");
         var value = Console.ReadLine()?.Trim();
 

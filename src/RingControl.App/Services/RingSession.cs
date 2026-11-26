@@ -27,7 +27,7 @@ public sealed class RingSession : IDisposable
     /// <summary>Raised when Ring rotates the refresh token, so it can be persisted again.</summary>
     public event EventHandler<RingTokens>? TokensUpdated;
 
-    public RingApiClient RequireApi() => _api ?? throw new InvalidOperationException("No hay una sesión de Ring activa.");
+    public RingApiClient RequireApi() => _api ?? throw new InvalidOperationException("There is no active Ring session.");
 
     public async Task<RingTokens> LoginAsync(string email, string password, string? twoFactorCode, CancellationToken ct = default)
     {
@@ -47,7 +47,7 @@ public sealed class RingSession : IDisposable
         }
         catch (Exception ex)
         {
-            AppLog.Write("No se pudo restaurar la sesión guardada: " + ex.Message);
+            AppLog.Write("Could not restore the saved session: " + ex.Message);
             return false;
         }
     }

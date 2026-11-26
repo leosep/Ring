@@ -81,20 +81,32 @@ public static class Installer
 
     public static string CliPath(string installDir) => Path.Combine(installDir, "cli", "ringcontrol.exe");
 
+    /// <summary>Same default as the GUI and the NVR (Videos\RingControl).</summary>
+    private static string DefaultRecordingsFolder()
+    {
+        var videos = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
+        if (string.IsNullOrWhiteSpace(videos))
+        {
+            videos = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Videos");
+        }
+
+        return Path.Combine(videos, "RingControl");
+    }
+
     public static async Task InstallAsync(InstallOptions options, IProgress<SetupProgress> progress, CancellationToken ct)
     {
         if (!OperatingSystem.IsWindows())
         {
-            throw new PlatformNotSupportedException("El instalador solo funciona en Windows.");
+            throw new PlatformNotSupportedException("The installer only works on Windows.");
         }
 
         var installDir = NormalizeInstallDir(options.InstallDir);
 
         using var payload = Assembly.GetExecutingAssembly().GetManifestResourceStream("payload.zip")
                             ?? throw new InvalidOperationException(
-                                "Este instalador se compiló sin contenido. Descarga el instalador completo.");
+                                "This installer was built without content. Download the full installer.");
 
-        progress.Report(new SetupProgress("Comprobando la instalación…", 2));
+        progress.Report(new SetupProgress("Checking the installation…", 2));
         await Task.Run(CloseRunningInstances, ct).ConfigureAwait(false);
         ct.ThrowIfCancellationRequested();
 
@@ -107,7 +119,7 @@ public static class Installer
 
             ExtractPayload(payload, staging, progress, ct);
 
-            progress.Report(new SetupProgress("Instalando archivos…", 70));
+            progress.Report(new SetupProgress("Installing files…", 70));
             ct.ThrowIfCancellationRequested();
 
             if (Directory.Exists(installDir))
@@ -121,13 +133,24 @@ public static class Installer
                 Directory.CreateDirectory(parent);
             }
 
-            Directory.Move(staging, installDir);
+            if (Directory.Exists(installDir))
+            {
+                // The running setup may live inside the install folder (reinstall or
+                // upgrade), so Windows cannot delete that folder. Merge the new files
+                // over the existing ones instead of failing the installation.
+                CopyDirectory(staging, installDir);
+                TryDeleteDirectory(staging, 0);
+            }
+            else
+            {
+                Directory.Move(staging, installDir);
+            }
         }
         catch (UnauthorizedAccessException ex)
         {
             TryDeleteDirectory(staging, 0);
             throw new InvalidOperationException(
-                $"No se puede escribir en \"{installDir}\". Elige una carpeta dentro de tu perfil de usuario.", ex);
+                $"Cannot write to \"{installDir}\". Choose a folder inside your user profile.", ex);
         }
         catch
         {
@@ -137,16 +160,16 @@ public static class Installer
 
         ct.ThrowIfCancellationRequested();
 
-        progress.Report(new SetupProgress("Preparando el desinstalador…", 76));
+        progress.Report(new SetupProgress("Preparing the uninstaller…", 76));
         CopySelfInto(installDir);
 
-        progress.Report(new SetupProgress("Creando accesos directos…", 82));
+        progress.Report(new SetupProgress("Creating shortcuts…", 82));
         CreateShortcuts(installDir, options);
 
-        progress.Report(new SetupProgress("Configurando el inicio automático…", 88));
+        progress.Report(new SetupProgress("Configuring autostart…", 88));
         ConfigureAutostart(installDir, options.AutostartNvr);
 
-        progress.Report(new SetupProgress("Actualizando el PATH…", 92));
+        progress.Report(new SetupProgress("Updating PATH…", 92));
         if (options.AddToPath)
         {
             AddToPath(Path.Combine(installDir, "cli"));
@@ -156,43 +179,43 @@ public static class Installer
             RemoveFromPath(Path.Combine(installDir, "cli"));
         }
 
-        progress.Report(new SetupProgress("Registrando la aplicación…", 96));
+        progress.Report(new SetupProgress("Registering the application…", 96));
         WriteRegistry(installDir);
 
-        progress.Report(new SetupProgress("Instalación completada.", 100));
+        progress.Report(new SetupProgress("Installation completed.", 100));
     }
 
     public static async Task UninstallAsync(InstallOptions options, IProgress<SetupProgress> progress, CancellationToken ct)
     {
         if (!OperatingSystem.IsWindows())
         {
-            throw new PlatformNotSupportedException("El desinstalador solo funciona en Windows.");
+            throw new PlatformNotSupportedException("The uninstaller only works on Windows.");
         }
 
         var installDir = !string.IsNullOrWhiteSpace(options.InstallDir)
             ? NormalizeInstallDir(options.InstallDir)
             : InstalledDir ?? InstallOptions.DefaultDir;
 
-        progress.Report(new SetupProgress("Cerrando aplicaciones…", 5));
+        progress.Report(new SetupProgress("Closing applications…", 5));
         await Task.Run(CloseRunningInstances, ct).ConfigureAwait(false);
 
-        progress.Report(new SetupProgress("Eliminando accesos directos…", 20));
+        progress.Report(new SetupProgress("Removing shortcuts…", 20));
         DeleteShortcuts(installDir);
         ConfigureAutostart(installDir, enabled: false);
 
-        progress.Report(new SetupProgress("Actualizando el PATH…", 35));
+        progress.Report(new SetupProgress("Updating PATH…", 35));
         RemoveFromPath(Path.Combine(installDir, "cli"));
 
-        progress.Report(new SetupProgress("Eliminando el registro…", 50));
+        progress.Report(new SetupProgress("Removing the registry entries…", 50));
         DeleteRegistry();
 
         if (options.PurgeData)
         {
-            progress.Report(new SetupProgress("Eliminando configuración y sesión…", 60));
+            progress.Report(new SetupProgress("Removing configuration and session…", 60));
             PurgeConfiguration();
         }
 
-        progress.Report(new SetupProgress("Eliminando archivos…", 70));
+        progress.Report(new SetupProgress("Removing files…", 70));
         ct.ThrowIfCancellationRequested();
 
         var self = Environment.ProcessPath;
@@ -211,7 +234,7 @@ public static class Installer
             TryDeleteDirectory(installDir, 3);
         }
 
-        progress.Report(new SetupProgress("Desinstalación completada.", 100));
+        progress.Report(new SetupProgress("Uninstallation completed.", 100));
     }
 
     public static void Launch(string installDir)
@@ -219,7 +242,7 @@ public static class Installer
         var exe = GuiPath(installDir);
         if (!File.Exists(exe))
         {
-            throw new FileNotFoundException("No se encontró RingControl.exe.", exe);
+            throw new FileNotFoundException("RingControl.exe was not found.", exe);
         }
 
         Process.Start(new ProcessStartInfo(exe)
@@ -233,7 +256,7 @@ public static class Installer
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new InvalidOperationException("Indica una carpeta de instalación.");
+            throw new InvalidOperationException("Specify an installation folder.");
         }
 
         var full = Path.GetFullPath(value.Trim().Trim('"'));
@@ -243,12 +266,12 @@ public static class Installer
             string.Equals(full.TrimEnd(Path.DirectorySeparatorChar), root.TrimEnd(Path.DirectorySeparatorChar),
                 StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException("No se puede instalar en la raíz de una unidad.");
+            throw new InvalidOperationException("Cannot install to the root of a drive.");
         }
 
         if (full.Length < 12)
         {
-            throw new InvalidOperationException("La ruta de instalación es demasiado corta. Elige una carpeta como C:\\Users\\TuUsuario\\Programs\\RingControl.");
+            throw new InvalidOperationException("The installation path is too short. Choose a folder such as C:\\Users\\YourUser\\Programs\\RingControl.");
         }
 
         return full;
@@ -272,7 +295,7 @@ public static class Installer
             if (!target.StartsWith(destination.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
                     StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidDataException("El paquete de instalación contiene una ruta no válida.");
+                throw new InvalidDataException("The installation package contains an invalid path.");
             }
 
             var directory = Path.GetDirectoryName(target);
@@ -287,8 +310,27 @@ public static class Installer
             if (done % 25 == 0 || done == entries.Count)
             {
                 var percent = 5 + done * 63.0 / total;
-                progress.Report(new SetupProgress($"Instalando archivos… ({done}/{entries.Count})", percent));
+                progress.Report(new SetupProgress($"Installing files… ({done}/{entries.Count})", percent));
             }
+        }
+    }
+
+    private static void CopyDirectory(string source, string destination)
+    {
+        Directory.CreateDirectory(destination);
+
+        foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(source, file);
+            var target = Path.Combine(destination, relative);
+
+            var directory = Path.GetDirectoryName(target);
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            File.Copy(file, target, overwrite: true);
         }
     }
 
@@ -324,7 +366,7 @@ public static class Installer
         {
             var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
             Shortcuts.Create(Path.Combine(desktop, "RingControl.lnk"), gui, null, installDir,
-                "RingControl · monitorización y NVR de Ring");
+                "RingControl · Ring monitoring and NVR");
         }
         else
         {
@@ -336,11 +378,25 @@ public static class Installer
         {
             Directory.CreateDirectory(startMenu);
             Shortcuts.Create(Path.Combine(startMenu, "RingControl.lnk"), gui, null, installDir,
-                "RingControl · monitorización y NVR de Ring");
+                "RingControl · Ring monitoring and NVR");
             Shortcuts.Create(Path.Combine(startMenu, "RingControl (CLI).lnk"), CliPath(installDir), null,
-                Path.Combine(installDir, "cli"), "Consola de RingControl");
-            Shortcuts.Create(Path.Combine(startMenu, "Abrir grabaciones.lnk"),
-                Path.Combine(installDir, "RingControl.exe"), null, installDir, "Grabaciones del NVR");
+                Path.Combine(installDir, "cli"), "RingControl console");
+
+            // Open the recordings folder directly instead of launching the GUI.
+            var recordings = DefaultRecordingsFolder();
+            try
+            {
+                Directory.CreateDirectory(recordings);
+            }
+            catch
+            {
+                // The folder is created by the app on first run if this fails.
+            }
+
+            var explorer = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe");
+            Shortcuts.Create(Path.Combine(startMenu, "Open recordings.lnk"), explorer,
+                $"\"{recordings}\"", recordings, "NVR recordings");
         }
         else
         {
@@ -373,7 +429,7 @@ public static class Installer
         }
 
         Shortcuts.Create(link, cli, "nvr run --hidden", Path.Combine(installDir, "cli"),
-            "Grabación continua del NVR de RingControl");
+            "RingControl NVR continuous recording");
     }
 
     private static void WriteRegistry(string installDir)

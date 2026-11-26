@@ -36,8 +36,8 @@ public partial class MainWindow : Window
         Width = Math.Min(Width, area.Width);
         Height = Math.Min(Height, area.Height);
 
-        AppLog.Write($"Ventana: área de trabajo {area.Width:0}×{area.Height:0} DIP, " +
-                     $"tamaño inicial {Width:0}×{Height:0} DIP.");
+        AppLog.Write($"Window: work area {area.Width:0}×{area.Height:0} DIP, " +
+                     $"initial size {Width:0}×{Height:0} DIP.");
     }
 
     private void UpdateMaximizeButton()
@@ -49,7 +49,7 @@ public partial class MainWindow : Window
 
         var maximized = WindowState == WindowState.Maximized;
         MaximizeButton.Content = maximized ? "\uE923" : "\uE922";
-        MaximizeButton.ToolTip = maximized ? "Restaurar" : "Maximizar";
+        MaximizeButton.ToolTip = maximized ? "Restore" : "Maximize";
     }
 
     private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
@@ -101,7 +101,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            AppLog.Error("Cierre de la ventana", ex);
+            AppLog.Error("Window close", ex);
         }
 
         _allowClose = true;
