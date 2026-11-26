@@ -19,7 +19,7 @@ public sealed class VlcService : IDisposable
             LibVlc = new LibVLC(
                 "--no-video-title-show",
                 "--no-snapshot-preview",
-                "--quiet",
+                "--verbose=1",
                 "--network-caching=300",
                 "--file-caching=300");
 

@@ -275,6 +275,7 @@ public sealed class RingLiveStream : IAsyncDisposable
             }
             else if (state == RTCPeerConnectionState.closed)
             {
+                Log("Estado WebRTC: closed" + (_stopRequested == 0 ? " (cierre inesperado)" : string.Empty));
                 SetState(LiveStreamState.Stopped, "Vídeo detenido");
             }
         };
@@ -712,6 +713,8 @@ public sealed class RingLiveStream : IAsyncDisposable
         {
             return;
         }
+
+        Log("Deteniendo la sesión de vídeo.");
 
         try
         {

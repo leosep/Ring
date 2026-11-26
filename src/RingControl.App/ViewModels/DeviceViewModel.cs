@@ -539,6 +539,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IAsyncDisposable
             throw new InvalidOperationException("Ring no devolvió una sesión de vídeo válida.");
         }
 
+        AppLog.Write($"[directo:{Device.Id}] Abriendo el reproductor con {stream.SdpFilePath} (puerto {stream.LocalVideoPort}).");
         CreatePlayer(stream.SdpFilePath);
         stream.ForwardEnabled = true;
         IsLive = true;
