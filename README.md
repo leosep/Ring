@@ -1,69 +1,69 @@
 # RingControl
 
-NVR y panel de control para cámaras y timbres **Ring**, con:
+NVR and control panel for **Ring** cameras and doorbells, featuring:
 
-- **Aplicación de escritorio para Windows** (WPF, tema oscuro, español): estado de los dispositivos, vista en vivo, luz, sirena, timbre, detección de movimiento, grabación manual y **modo NVR**.
-- **CLI + daemon headless para Linux**: grabación 24/7 o por eventos, rotación de segmentos, retención y servicio `systemd`.
-- **Motor compartido** (`RingControl.Core`) que graba H.264 directamente a **MP4 fragmentado** sin ffmpeg ni dependencias nativas.
+- **Windows desktop app** (WPF, dark theme): device status, live view, light, siren, chime, motion detection, manual recording, and **NVR mode**.
+- **Headless CLI + daemon for Linux**: 24/7 or event-based recording, segment rotation, retention, and `systemd` service.
+- **Shared engine** (`RingControl.Core`) that records H.264 directly to **fragmented MP4** without ffmpeg or native dependencies.
 
-> ⚠️ **Aviso**: Ring no ofrece una API pública. RingControl usa la misma API privada que la app oficial y proyectos como `ring-client-api` / `python-ring-doorbell`. Ring puede cambiarla o bloquear el acceso en cualquier momento. Úsalo solo con tu propia cuenta.
+> ⚠️ **Notice**: Ring does not offer a public API. RingControl uses the same private API as the official app and projects like `ring-client-api` / `python-ring-doorbell`. Ring may change or block access at any time. Use only with your own account.
 
 ---
 
-## Características
+## Features
 
-| Área | Detalle |
+| Area | Detail |
 | --- | --- |
-| Autenticación | OAuth de Ring con contraseña, 2FA (SMS/TOTP) y refresh token |
-| Seguridad | Solo se guarda el *refresh token*: DPAPI en Windows, AES-256-GCM + clave `0600` en Linux. Nunca la contraseña |
-| Vídeo | WebRTC (SIPSorcery) → H.264 RTP → MP4 fragmentado, sin recompresión |
-| NVR | Modos `events`, `continuous` y `both`, segmentos configurables, clips por evento, retención por días y cuota de disco |
-| Almacenamiento | `<Vídeos>/RingControl/<cámara>_<id>/<fecha>_<tipo>.mp4` + sidecar `.json` |
-| GUI | Vista en vivo, instantáneas, eventos, controles del dispositivo y grabación |
+| Authentication | Ring OAuth with password, 2FA (SMS/TOTP), and refresh token |
+| Security | Only the *refresh token* is stored: DPAPI on Windows, AES-256-GCM + `0600` key on Linux. Never the password |
+| Video | WebRTC (SIPSorcery) → H.264 RTP → fragmented MP4, no re-encoding |
+| NVR | `events`, `continuous`, and `both` modes, configurable segments, event clips, retention by days and disk quota |
+| Storage | `<Videos>/RingControl/<camera>_<id>/<date>_<type>.mp4` + sidecar `.json` |
+| GUI | Live view, snapshots, events, device controls, and recording |
 | CLI | `login`, `devices`, `status`, `snapshot`, `record`, `clips`, `nvr run/status/stop/config` |
-| Instalación | Instalador de Windows (GUI + CLI + NVR) y `install.sh` con unidad `systemd` para Linux x64/arm64 |
+| Installation | Windows installer (GUI + CLI + NVR) and `install.sh` with `systemd` unit for Linux x64/arm64 |
 
 ---
 
-## Requisitos
+## Requirements
 
-- **Windows 10/11 x64**. El instalador es autocontenido: no hace falta instalar .NET.
-- **Linux x64 o arm64** con `systemd`. El binario es autocontenido.
-- Una cuenta Ring con al menos una cámara o timbre, y acceso al teléfono para el 2FA.
-- La cámara debe permitir **vista en vivo** (no estar desactivada en la app de Ring).
+- **Windows 10/11 x64**. The installer is self-contained: no .NET installation required.
+- **Linux x64 or arm64** with `systemd`. The binary is self-contained.
+- A Ring account with at least one camera or doorbell, and phone access for 2FA.
+- The camera must allow **live view** (not disabled in the Ring app).
 
 ---
 
-## Instalación en Windows
+## Windows Installation
 
-1. Ejecuta `RingControlSetup-1.0.0.exe`.
-2. Elige la carpeta (por defecto `%LOCALAPPDATA%\Programs\RingControl`), los accesos directos y si quieres que el NVR arranque al iniciar sesión.
-3. Pulsa **Instalar**. No requiere permisos de administrador.
-4. Abre RingControl e inicia sesión con tu cuenta de Ring (código 2FA incluido).
+1. Run `RingControlSetup-1.0.0.exe`.
+2. Choose the folder (default `%LOCALAPPDATA%\Programs\RingControl`), shortcuts, and whether to start the NVR on login.
+3. Click **Install**. No administrator privileges required.
+4. Open RingControl and sign in with your Ring account (2FA code included).
 
-Instalación silenciosa (por ejemplo, para despliegues):
+Silent installation (e.g., for deployments):
 
 ```powershell
 .\RingControlSetup-1.0.0.exe /S --autostart --no-launch
 ```
 
-Opciones del instalador:
+Installer options:
 
-| Opción | Efecto |
+| Option | Effect |
 | --- | --- |
-| `/S`, `--silent` | Sin interfaz |
-| `--dir <ruta>` | Carpeta de instalación |
-| `--no-desktop` | Sin acceso directo en el escritorio |
-| `--no-startmenu` | Sin entrada en el menú Inicio |
-| `--no-path` | No añadir `ringcontrol` al PATH del usuario |
-| `--autostart` | Arrancar el NVR al iniciar sesión |
-| `--no-launch` | No abrir la app al terminar |
-| `--uninstall` | Desinstalar |
-| `--purge` | Al desinstalar, borrar también configuración y sesión |
+| `/S`, `--silent` | No UI |
+| `--dir <path>` | Installation folder |
+| `--no-desktop` | No desktop shortcut |
+| `--no-startmenu` | No Start Menu entry |
+| `--no-path` | Don't add `ringcontrol` to user PATH |
+| `--autostart` | Start NVR on login |
+| `--no-launch` | Don't open app on finish |
+| `--uninstall` | Uninstall |
+| `--purge` | On uninstall, also delete config and session |
 
-También se genera `RingControl-1.0.0-win-x64.zip`, una versión portable que no escribe en el registro.
+A portable version `RingControl-1.0.0-win-x64.zip` is also generated, which doesn't write to the registry.
 
-Desinstalación: **Configuración → Aplicaciones → RingControl**, o
+Uninstall: **Settings → Apps → RingControl**, or
 
 ```powershell
 "%LOCALAPPDATA%\Programs\RingControl\RingControlSetup.exe" --uninstall
@@ -71,42 +71,42 @@ Desinstalación: **Configuración → Aplicaciones → RingControl**, o
 
 ---
 
-## Instalación en Linux (CLI + NVR)
+## Linux Installation (CLI + NVR)
 
-### 1. Compilar el binario
+### 1. Build the binary
 
-Necesitas el SDK de .NET 9 solo para compilar:
+You need the .NET 9 SDK only for building:
 
 ```bash
-./deploy/linux/build.sh            # detecta x64/arm64
-# o
+./deploy/linux/build.sh            # detects x64/arm64
+# or
 ./deploy/linux/build.sh arm64
 ```
 
-Genera `dist/linux-<arch>/ringcontrol` (autocontenido, un solo archivo).
+Generates `dist/linux-<arch>/ringcontrol` (self-contained, single file).
 
-### 2. Instalar
+### 2. Install
 
 ```bash
-# Servicio del sistema (recomendado), ejecutado como tu usuario:
+# System service (recommended), runs as your user:
 sudo ./deploy/linux/install.sh
 
-# Servicio de usuario, sin root:
+# User service, no root:
 ./deploy/linux/install.sh --user
 
-# Carpeta de grabaciones personalizada:
-sudo ./deploy/linux/install.sh --recordings /mnt/grabaciones
+# Custom recordings folder:
+sudo ./deploy/linux/install.sh --recordings /mnt/recordings
 ```
 
-El instalador:
+The installer:
 
-- copia el binario a `/opt/ringcontrol` (o `~/.local/opt/ringcontrol`),
-- crea el comando `ringcontrol`,
-- prepara `~/.config/ringcontrol/nvr.json`,
-- te pide iniciar sesión en Ring si no hay sesión guardada,
-- instala y activa `ringcontrol-nvr.service` con `Restart=always`.
+- copies the binary to `/opt/ringcontrol` (or `~/.local/opt/ringcontrol`),
+- creates the `ringcontrol` command,
+- prepares `~/.config/ringcontrol/nvr.json`,
+- prompts for Ring login if no saved session exists,
+- installs and enables `ringcontrol-nvr.service` with `Restart=always`.
 
-### 3. Comprobar
+### 3. Verify
 
 ```bash
 ringcontrol --version
@@ -115,43 +115,43 @@ sudo systemctl status ringcontrol-nvr
 sudo journalctl -u ringcontrol-nvr -f
 ```
 
-Si cambias la configuración:
+If you change configuration:
 
 ```bash
 nano ~/.config/ringcontrol/nvr.json
 sudo systemctl restart ringcontrol-nvr
 ```
 
-### 4. Desinstalar
+### 4. Uninstall
 
 ```bash
-sudo ./deploy/linux/uninstall.sh             # conserva grabaciones y sesión
-sudo ./deploy/linux/uninstall.sh --purge     # borra también configuración/sesión
+sudo ./deploy/linux/uninstall.sh             # keeps recordings and session
+sudo ./deploy/linux/uninstall.sh --purge     # also deletes config/session
 ```
 
 ---
 
-## Uso de la CLI
+## CLI Usage
 
 ```text
-ringcontrol login                 Inicia sesión (contraseña + 2FA)
-ringcontrol logout                Borra la sesión guardada
-ringcontrol devices               Lista cámaras (--json)
-ringcontrol status                Estado de la cuenta y del NVR
-ringcontrol snapshot [cámara]     Guarda un JPEG (--out archivo.jpg)
-ringcontrol record [cámara]       Graba un clip (--seconds 30, --root carpeta)
-ringcontrol clips                 Lista grabaciones (--prune, --json)
-ringcontrol nvr run               Arranca el NVR en primer plano
-ringcontrol nvr status            Estado del NVR en ejecución (--json)
-ringcontrol nvr stop              Detiene el NVR
-ringcontrol nvr config --init     Crea la configuración
+ringcontrol login                 Sign in (password + 2FA)
+ringcontrol logout                Delete saved session
+ringcontrol devices               List cameras (--json)
+ringcontrol status                Account and NVR status
+ringcontrol snapshot [camera]     Save a JPEG (--out file.jpg)
+ringcontrol record [camera]       Record a clip (--seconds 30, --root folder)
+ringcontrol clips                 List recordings (--prune, --json)
+ringcontrol nvr run               Start NVR in foreground
+ringcontrol nvr status            Running NVR status (--json)
+ringcontrol nvr stop              Stop NVR
+ringcontrol nvr config --init     Create configuration
 ```
 
-`[cámara]` acepta el ID o parte del nombre. Si solo hay una cámara se usa automáticamente.
+`[camera]` accepts the ID or part of the name. If only one camera exists, it's used automatically.
 
-Variables de entorno útiles: `RING_EMAIL`, `RING_PASSWORD`, `RING_2FA_CODE` (para automatizar el login) y `RINGCONTROL_DEBUG=1` (traza de errores).
+Useful environment variables: `RING_EMAIL`, `RING_PASSWORD`, `RING_2FA_CODE` (to automate login) and `RINGCONTROL_DEBUG=1` (error trace).
 
-Ejemplo de grabación de prueba sin esperar a un evento:
+Example test recording without waiting for an event:
 
 ```bash
 ringcontrol nvr run --once --seconds 10
@@ -159,13 +159,13 @@ ringcontrol nvr run --once --seconds 10
 
 ---
 
-## Configuración del NVR
+## NVR Configuration
 
-Archivo: `~/.config/ringcontrol/nvr.json` (Linux) o `%APPDATA%\RingControl\nvr.json` (Windows). Lo comparten la GUI y la CLI.
+File: `~/.config/ringcontrol/nvr.json` (Linux) or `%APPDATA%\RingControl\nvr.json` (Windows). Shared by GUI and CLI.
 
 ```json
 {
-  "RootFolder": "/home/usuario/Videos/RingControl",
+  "RootFolder": "/home/user/Videos/RingControl",
   "Mode": "Events",
   "SegmentMinutes": 5,
   "EventClipSeconds": 45,
@@ -181,21 +181,21 @@ Archivo: `~/.config/ringcontrol/nvr.json` (Linux) o `%APPDATA%\RingControl\nvr.j
 }
 ```
 
-| Campo | Descripción |
+| Field | Description |
 | --- | --- |
-| `Mode` | `Events` (solo eventos), `Continuous` (24/7) o `Both` (24/7; todo queda grabado) |
-| `SegmentMinutes` | Duración de cada segmento continuo (1–60) |
-| `EventClipSeconds` | Duración de un clip por evento (10–600) |
-| `EventPollSeconds` | Frecuencia de consulta de eventos (10–600) |
-| `RetentionDays` | Días de retención; `0` desactiva el límite por fecha |
-| `MaxStorageBytes` | Cuota de disco; se borran los clips más antiguos al superarla. `0` = sin límite |
-| `RecordOnDing` / `RecordOnMotion` / `RecordOnDemand` | Qué eventos inician grabación |
-| `DeviceIds` | IDs a grabar; vacío = todas |
-| `MaxConcurrentStreams` | Sesiones simultáneas (Ring limita las vistas en vivo) |
+| `Mode` | `Events` (events only), `Continuous` (24/7), or `Both` (24/7; everything recorded) |
+| `SegmentMinutes` | Duration of each continuous segment (1–60) |
+| `EventClipSeconds` | Duration of an event clip (10–600) |
+| `EventPollSeconds` | Event polling frequency (10–600) |
+| `RetentionDays` | Days of retention; `0` disables date-based limit |
+| `MaxStorageBytes` | Disk quota; oldest clips deleted when exceeded. `0` = no limit |
+| `RecordOnDing` / `RecordOnMotion` / `RecordOnDemand` | Which events trigger recording |
+| `DeviceIds` | IDs to record; empty = all |
+| `MaxConcurrentStreams` | Simultaneous sessions (Ring limits live views) |
 
-Los cambios se aplican al reiniciar el servicio (`systemctl restart ringcontrol-nvr`) o al reiniciar el NVR desde la GUI.
+Changes apply on service restart (`systemctl restart ringcontrol-nvr`) or NVR restart from GUI.
 
-### Carpeta de grabaciones
+### Recordings folder
 
 ```text
 Videos/RingControl/
@@ -206,9 +206,9 @@ Videos/RingControl/
     └── 2026-11-25_21-52-10_ding.json
 ```
 
-Cada `.json` contiene dispositivo, inicio/fin, duración, tamaño, resolución, FPS, tipo de disparo y si el clip se cerró correctamente.
+Each `.json` contains device, start/end, duration, size, resolution, FPS, trigger type, and whether the clip closed cleanly.
 
-Los MP4 son **fragmentados** (fMP4): se pueden reproducir mientras se graban y son tolerantes a cortes. VLC, navegadores, ffmpeg y la mayoría de reproductores los abren directamente. Para editarlos puede ser necesario remuxarlos:
+MP4s are **fragmented** (fMP4): playable while recording and tolerant to cuts. VLC, browsers, ffmpeg, and most players open them directly. For editing, remuxing may be needed:
 
 ```bash
 ffmpeg -i clip.mp4 -c copy clip-remux.mp4
@@ -216,35 +216,35 @@ ffmpeg -i clip.mp4 -c copy clip-remux.mp4
 
 ---
 
-## Seguridad
+## Security
 
-- **Nunca se guarda la contraseña.** Solo el refresh token que Ring rota en cada uso.
-- **Windows**: el token se cifra con DPAPI (`CurrentUser`), ligado a tu cuenta de Windows.
-- **Linux**: AES-256-GCM con una clave aleatoria en `~/.config/ringcontrol/session.key` con permisos `0600`. La carpeta de configuración es `0700`.
-- El servicio `systemd` aplica `NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome=read-only` y solo permite escribir en la configuración y en la carpeta de grabaciones.
-- Las grabaciones quedan en tu disco; no se suben a ningún servicio.
-
----
-
-## Limitaciones conocidas
-
-- **API no oficial**: puede cambiar sin aviso. Si Ring modifica el flujo de autenticación o los endpoints, habrá que actualizar la app.
-- **Clips en la nube**: algunos planes/cuentas no exponen URLs de reproducción (`url: null`). RingControl no depende de ellos: graba en local.
-- **Instantáneas**: Ring bloquea las instantáneas si la detección de movimiento está desactivada en la cámara.
-- **Audio**: la vista en vivo y las grabaciones son solo vídeo (Ring requiere un flujo BUNDLE que SIPSorcery no negocia bien).
-- **Vistas simultáneas**: Ring limita cuántas sesiones en vivo permite; por eso `MaxConcurrentStreams` es 2 por defecto.
-- **2FA**: el código es de un solo uso. Si el login falla, pide uno nuevo.
-- Una misma cuenta no debería usar el GUI y el daemon Linux con el **mismo** refresh token a la vez. Inicia sesión por separado en cada equipo.
+- **Password is never stored.** Only the refresh token that Ring rotates on each use.
+- **Windows**: token encrypted with DPAPI (`CurrentUser`), tied to your Windows account.
+- **Linux**: AES-256-GCM with a random key in `~/.config/ringcontrol/session.key` with `0600` permissions. Config folder is `0700`.
+- The `systemd` service applies `NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome=read-only` and only allows writing to config and recordings folders.
+- Recordings stay on your disk; not uploaded to any service.
 
 ---
 
-## Compilar desde el código
+## Known Limitations
+
+- **Unofficial API**: may change without notice. If Ring modifies auth flow or endpoints, the app needs updating.
+- **Cloud clips**: some plans/accounts don't expose playback URLs (`url: null`). RingControl doesn't depend on them: records locally.
+- **Snapshots**: Ring blocks snapshots if motion detection is disabled on the camera.
+- **Audio**: live view and recordings are video-only (Ring requires a BUNDLE stream that SIPSorcery doesn't negotiate well).
+- **Simultaneous views**: Ring limits concurrent live sessions; hence `MaxConcurrentStreams` defaults to 2.
+- **2FA**: code is single-use. If login fails, request a new one.
+- The same account shouldn't use the GUI and Linux daemon with the **same** refresh token simultaneously. Sign in separately on each machine.
+
+---
+
+## Building from Source
 
 ```bash
 dotnet build RingControl.sln -c Release
 ```
 
-Windows (instalador + portable):
+Windows (installer + portable):
 
 ```powershell
 .\build\publish-windows.ps1 -Version 1.0.0
@@ -256,29 +256,29 @@ Linux:
 ./deploy/linux/build.sh
 ```
 
-### Estructura
+### Structure
 
 ```text
-src/RingControl.Core/    API, auth, WebRTC, RTP, MP4, motor NVR (net9.0, multiplataforma)
-src/RingControl.App/     GUI WPF (net9.0-windows)
-src/RingControl.Cli/     CLI y daemon NVR (net9.0)
-src/RingControl.Setup/   Instalador de Windows (WPF, payload embebido)
-deploy/linux/            build.sh, install.sh, uninstall.sh, unidad systemd
+src/RingControl.Core/    API, auth, WebRTC, RTP, MP4, NVR engine (net9.0, cross-platform)
+src/RingControl.App/     WPF GUI (net9.0-windows)
+src/RingControl.Cli/     CLI and NVR daemon (net9.0)
+src/RingControl.Setup/   Windows installer (WPF, embedded payload)
+deploy/linux/            build.sh, install.sh, uninstall.sh, systemd unit
 build/                   publish-windows.ps1
 ```
 
 ---
 
-## Solución de problemas
+## Troubleshooting
 
-| Síntoma | Solución |
+| Symptom | Solution |
 | --- | --- |
-| `No hay ninguna sesión de Ring guardada` | `ringcontrol login` |
-| `La sesión guardada ha caducado` | Vuelve a iniciar sesión; Ring rotó el token |
-| `La cámara no envió vídeo a tiempo` | Comprueba que la vista en vivo funciona en la app oficial y que la cámara está en línea |
-| El NVR no graba eventos | Revisa `Mode`, `RecordOnDing`/`RecordOnMotion` y `ringcontrol nvr status` |
-| Disco lleno | Baja `RetentionDays` o `MaxStorageBytes`; se borran los clips más antiguos |
-| El servicio no arranca | `journalctl -u ringcontrol-nvr -n 100 --no-pager` |
-| Ring devuelve 429 | Ring ha limitado las solicitudes; espera unos minutos |
+| `No saved Ring session` | `ringcontrol login` |
+| `Saved session expired` | Sign in again; Ring rotated the token |
+| `Camera didn't send video in time` | Verify live view works in official app and camera is online |
+| NVR not recording events | Check `Mode`, `RecordOnDing`/`RecordOnMotion` and `ringcontrol nvr status` |
+| Disk full | Lower `RetentionDays` or `MaxStorageBytes`; oldest clips auto-deleted |
+| Service won't start | `journalctl -u ringcontrol-nvr -n 100 --no-pager` |
+| Ring returns 429 | Ring rate-limited requests; wait a few minutes |
 
-Registros: `~/.local/state/ringcontrol/logs/nvr.log` (Linux) y `%LOCALAPPDATA%\RingControl\logs\` (Windows).
+Logs: `~/.local/state/ringcontrol/logs/nvr.log` (Linux) and `%LOCALAPPDATA%\RingControl\logs\` (Windows).
