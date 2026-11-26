@@ -1,0 +1,90 @@
+<Window x:Class="RingControl.App.Views.ClipWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF"
+        Title="Grabación · Ring Control"
+        Width="1060" Height="700" MinWidth="720" MinHeight="480"
+        WindowStyle="None" Background="#FF07090C" WindowStartupLocation="CenterOwner"
+        FontFamily="{StaticResource UiFont}" UseLayoutRounding="True">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="52" ResizeBorderThickness="6" GlassFrameThickness="0"
+                      CornerRadius="0" UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+
+    <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Background="#FF07090C">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="52" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Background="#FF0C1015">
+                <StackPanel Orientation="Horizontal" Margin="18,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE714;" Style="{StaticResource Glyph}" FontSize="14"
+                               Foreground="{StaticResource AccentHoverBrush}" Margin="0,0,10,0" />
+                    <TextBlock x:Name="TitleText" Text="Grabación" FontSize="13.5" FontWeight="SemiBold"
+                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="700" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Style="{StaticResource WindowButton}" Click="Minimize_Click" ToolTip="Minimizar">
+                        <TextBlock Text="&#xE921;" FontFamily="{StaticResource IconFont}" FontSize="10" />
+                    </Button>
+                    <Button x:Name="MaximizeButton" Style="{StaticResource WindowButton}"
+                            Click="Maximize_Click" ToolTip="Maximizar">
+                        <TextBlock Text="&#xE922;" FontFamily="{StaticResource IconFont}" FontSize="10" />
+                    </Button>
+                    <Button Style="{StaticResource CloseWindowButton}" Click="Close_Click" ToolTip="Cerrar">
+                        <TextBlock Text="&#xE8BB;" FontFamily="{StaticResource IconFont}" FontSize="10" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <vlc:VideoView x:Name="Video" Grid.Row="1" Background="Black" />
+
+            <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,1,0,0" Padding="18,10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button x:Name="PlayButton" Style="{StaticResource IconButton}" Width="38" Height="38"
+                            Click="PlayPause_Click" ToolTip="Reproducir / Pausar">
+                        <TextBlock Text="&#xE768;" FontFamily="{StaticResource IconFont}" FontSize="14" />
+                    </Button>
+
+                    <Grid Grid.Column="1" Margin="14,0,20,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="TimeText" Text="00:00" FontSize="11.5"
+                                   Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                        <Slider x:Name="SeekBar" Grid.Column="1" Style="{StaticResource ModernSlider}"
+                                Minimum="0" Maximum="1" Margin="12,0" VerticalAlignment="Center"
+                                ValueChanged="SeekBar_ValueChanged" />
+                        <TextBlock x:Name="DurationText" Grid.Column="2" Text="--:--" FontSize="11.5"
+                                   Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                    </Grid>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock x:Name="StatusText" Text="Cargando grabación…" FontSize="11.5"
+                                   Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"
+                                   Margin="0,0,12,0" MaxWidth="260" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="&#xE767;" Style="{StaticResource Glyph}" FontSize="13"
+                                   Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,8,0" />
+                        <Slider x:Name="VolumeBar" Style="{StaticResource ModernSlider}" Width="96"
+                                Minimum="0" Maximum="100" Value="100" VerticalAlignment="Center"
+                                ValueChanged="VolumeBar_ValueChanged" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

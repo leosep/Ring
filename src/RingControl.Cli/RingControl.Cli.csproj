@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>ringcontrol</AssemblyName>
+    <RootNamespace>RingControl.Cli</RootNamespace>
+    <ApplicationIcon>..\..\assets\ringcontrol.ico</ApplicationIcon>
+    <Version>1.0.0</Version>
+    <Authors>RingControl</Authors>
+    <Company>RingControl</Company>
+    <Product>RingControl</Product>
+    <Description>NVR y cliente de línea de comandos para Ring (API no oficial).</Description>
+    <PublishTrimmed>false</PublishTrimmed>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RingControl.Core\RingControl.Core.csproj" />
+  </ItemGroup>
+
+</Project>

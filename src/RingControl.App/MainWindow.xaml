@@ -1,0 +1,861 @@
+﻿<Window x:Class="RingControl.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF"
+        Title="Ring Control"
+        Width="1360" Height="880" MinWidth="1120" MinHeight="720"
+        WindowStyle="None" Background="{StaticResource AppBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="{StaticResource UiFont}"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="52" ResizeBorderThickness="6" GlassFrameThickness="0"
+                      CornerRadius="0" UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <Style x:Key="DarkTabControl" TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabControl">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <TabPanel Grid.Row="0" IsItemsHost="True" Margin="0,0,0,8" />
+                            <ContentPresenter Grid.Row="1" ContentSource="SelectedContent" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DarkTabItem" TargetType="TabItem">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="Bd" Padding="12,6" CornerRadius="7" Margin="0,0,6,0"
+                                Background="Transparent">
+                            <ContentPresenter ContentSource="Header" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource SurfaceHoverBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource AccentSoftBrush}" />
+                                <Setter Property="Foreground" Value="{StaticResource AccentHoverBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Background="{StaticResource AppBackgroundBrush}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="52" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- ============================== Title bar ============================== -->
+            <Grid Grid.Row="0" Background="#FF0C1015">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" Margin="18,0,0,0" VerticalAlignment="Center">
+                    <Border Width="27" Height="27" CornerRadius="8" Background="{StaticResource AccentBrush}">
+                        <TextBlock Text="&#xE7ED;" Style="{StaticResource Glyph}" FontSize="13" Foreground="White" />
+                    </Border>
+                    <TextBlock Text="Ring Control" FontSize="13.5" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center" />
+                    <Border Background="#FF14202B" CornerRadius="6" Padding="7,2" Margin="14,0,0,0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="6" Height="6" Fill="{StaticResource SuccessBrush}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="Conectado" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Style="{StaticResource WindowButton}" Click="Minimize_Click" ToolTip="Minimizar">
+                        <TextBlock Text="&#xE921;" FontFamily="{StaticResource IconFont}" FontSize="10" />
+                    </Button>
+                    <Button x:Name="MaximizeButton" Style="{StaticResource WindowButton}" Click="Maximize_Click" ToolTip="Maximizar">
+                        <TextBlock Text="&#xE922;" FontFamily="{StaticResource IconFont}" FontSize="10" />
+                    </Button>
+                    <Button Style="{StaticResource CloseWindowButton}" Click="Close_Click" ToolTip="Cerrar">
+                        <TextBlock Text="&#xE8BB;" FontFamily="{StaticResource IconFont}" FontSize="10" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- ============================== Body ============================== -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="272" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Sidebar -->
+                <Border Grid.Column="0" Background="{StaticResource SidebarBrush}"
+                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
+                    <Grid Margin="14,16,14,14">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="6,0,2,8">
+                            <TextBlock Text="DISPOSITIVOS" FontSize="10.5" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" />
+                            <Button HorizontalAlignment="Right" Style="{StaticResource IconButton}"
+                                    Command="{Binding LoadDevicesCommand}" ToolTip="Actualizar dispositivos">
+                                <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" FontSize="14" />
+                            </Button>
+                        </Grid>
+
+                        <ListBox Grid.Row="1" ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}"
+                                 Style="{StaticResource CleanListBox}" ItemContainerStyle="{StaticResource CleanListItem}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="8,9">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Width="34" Height="34" CornerRadius="9" Background="#FF1B2430">
+                                            <TextBlock Text="&#xE7ED;" Style="{StaticResource Glyph}" FontSize="15"
+                                                       Foreground="{StaticResource AccentHoverBrush}" />
+                                        </Border>
+
+                                        <StackPanel Grid.Column="1" Margin="10,0,8,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding ModelLabel}" Style="{StaticResource MutedCaption}"
+                                                       TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                            <Ellipse Width="8" Height="8" HorizontalAlignment="Right">
+                                                <Ellipse.Style>
+                                                    <Style TargetType="Ellipse">
+                                                        <Setter Property="Fill" Value="{StaticResource TextMutedBrush}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsOnline}" Value="True">
+                                                                <Setter Property="Fill" Value="{StaticResource SuccessBrush}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Ellipse.Style>
+                                            </Ellipse>
+                                            <TextBlock Text="{Binding BatteryLabel}" FontSize="10.5" Margin="0,4,0,0"
+                                                       Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Right" />
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <StackPanel Grid.Row="2" Margin="0,10,0,0">
+                            <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,0,0,12" />
+
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="10" Padding="10,8" Margin="0,0,0,8">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="28" Height="28" CornerRadius="8" Background="{StaticResource AccentSoftBrush}">
+                                        <TextBlock Text="{Binding AccountInitial}" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource AccentHoverBrush}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="9,0,0,0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding AccountLabel}" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="Sesión de Ring" Style="{StaticResource MutedCaption}" Margin="0,1,0,0" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Button Style="{StaticResource GhostButton}" Command="{Binding OpenSettingsCommand}"
+                                    HorizontalContentAlignment="Left" Padding="12,8" Margin="0,0,0,6">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE713;" Style="{StaticResource Glyph}" FontSize="14"
+                                               Foreground="{StaticResource TextSecondaryBrush}" />
+                                    <TextBlock Text="Ajustes" Margin="10,0,0,0" />
+                                </StackPanel>
+                            </Button>
+
+                            <Button Style="{StaticResource GhostButton}" Command="{Binding LogoutCommand}"
+                                    HorizontalContentAlignment="Left" Padding="12,8">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE72E;" Style="{StaticResource Glyph}" FontSize="14"
+                                               Foreground="{StaticResource TextSecondaryBrush}" />
+                                    <TextBlock Text="Cerrar sesión" Margin="10,0,0,0" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Content -->
+                <Grid Grid.Column="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="264" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <Grid Grid.Row="0" Margin="24,18,24,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock Text="{Binding SelectedDevice.Name}" Style="{StaticResource PageTitle}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
+                                <TextBlock Text="{Binding SelectedDevice.Subtitle}" Style="{StaticResource Caption}" />
+                                <TextBlock Text="·" Style="{StaticResource Caption}" Margin="8,0" />
+                                <Ellipse Width="7" Height="7" VerticalAlignment="Center">
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Setter Property="Fill" Value="{StaticResource TextMutedBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedDevice.IsOnline}" Value="True">
+                                                    <Setter Property="Fill" Value="{StaticResource SuccessBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
+                                <TextBlock Text="{Binding SelectedDevice.StatusLabel}" Style="{StaticResource Caption}" Margin="6,0,0,0" />
+                                <TextBlock Text="·" Style="{StaticResource Caption}" Margin="8,0" />
+                                <TextBlock Text="{Binding SelectedDevice.BatteryLabel}" Style="{StaticResource Caption}" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Padding="12,7"
+                                VerticalAlignment="Center" Command="{Binding SelectedDevice.RefreshCommand}"
+                                IsEnabled="{Binding SelectedDevice.IsBusy, Converter={StaticResource InverseBool}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE72C;" Style="{StaticResource Glyph}" FontSize="13" />
+                                <TextBlock Text="Actualizar" Margin="8,0,0,0" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <!-- Main -->
+                    <Grid Grid.Row="1" Margin="24,16,24,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="340" />
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Grid.Column="0" Margin="0,0,16,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Style="{StaticResource Card}" Padding="0" Background="#FF06080B" ClipToBounds="True">
+                                <Grid>
+                                    <vlc:VideoView x:Name="VideoView" Background="Black"
+                                                   MediaPlayer="{Binding SelectedDevice.MediaPlayer}"
+                                                   Visibility="{Binding SelectedDevice.IsVideoVisible, Converter={StaticResource BoolToVis}}" />
+
+                                    <Grid Visibility="{Binding SelectedDevice.IsVideoVisible, Converter={StaticResource InverseBoolToVis}}">
+                                        <Image Source="{Binding SelectedDevice.SnapshotImage}" Stretch="UniformToFill" />
+                                        <Border Background="#59070A0E" />
+
+                                        <Border Background="#F20B0E12" BorderBrush="#26FFFFFF" BorderThickness="1"
+                                                CornerRadius="14" Padding="26,22" MaxWidth="420"
+                                                HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24">
+                                            <StackPanel>
+                                                <Border Width="50" Height="50" CornerRadius="15" Background="#FF16202C" HorizontalAlignment="Center">
+                                                    <TextBlock Text="&#xE714;" Style="{StaticResource Glyph}" FontSize="23"
+                                                               Foreground="{StaticResource AccentHoverBrush}" />
+                                                </Border>
+                                                <TextBlock Text="{Binding SelectedDevice.LiveStatus}" FontSize="16" FontWeight="SemiBold"
+                                                           TextAlignment="Center" TextWrapping="Wrap" Margin="0,14,0,0" />
+                                                <TextBlock Text="{Binding SelectedDevice.LiveError}" Foreground="#FFFCA5A5" FontSize="12.5"
+                                                           TextAlignment="Center" TextWrapping="Wrap" Margin="0,8,0,0"
+                                                           Visibility="{Binding SelectedDevice.LiveError, Converter={StaticResource StringToVis}}" />
+                                                <TextBlock Text="La instantánea se actualiza automáticamente. Inicia el vídeo en directo para ver la cámara en tiempo real."
+                                                           Style="{StaticResource MutedCaption}" TextAlignment="Center" TextWrapping="Wrap"
+                                                           LineHeight="17" Margin="0,10,0,0" />
+                                                <Button Content="Iniciar vídeo en directo" Style="{StaticResource PrimaryButton}"
+                                                        HorizontalAlignment="Center" Margin="0,18,0,0" Padding="18,9"
+                                                        Command="{Binding SelectedDevice.ToggleLiveCommand}"
+                                                        Visibility="{Binding SelectedDevice.CanStartLive, Converter={StaticResource BoolToVis}}" />
+                                            </StackPanel>
+                                        </Border>
+
+                                        <TextBlock Text="{Binding SelectedDevice.SnapshotStatus}" Style="{StaticResource MutedCaption}"
+                                                   HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,14" />
+
+                                        <Border Background="#CC0B0E12" CornerRadius="7" Padding="8,4"
+                                                HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,16,12">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Ellipse Width="7" Height="7" Fill="{StaticResource SuccessBrush}"
+                                                         VerticalAlignment="Center" Margin="0,0,6,0" />
+                                                <TextBlock Text="Instantánea" FontSize="10.5"
+                                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+
+                            <!-- Action bar -->
+                            <Grid Grid.Row="1" Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Style="{StaticResource PrimaryButton}" Padding="16,8"
+                                            Command="{Binding SelectedDevice.ToggleLiveCommand}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE768;" Style="{StaticResource Glyph}" FontSize="12" />
+                                            <TextBlock Text="{Binding SelectedDevice.LiveButtonText}" Margin="8,0,0,0" />
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Style="{StaticResource GhostButton}" Padding="14,8" Margin="8,0,0,0"
+                                            Command="{Binding SelectedDevice.ToggleRecordCommand}"
+                                            IsEnabled="{Binding SelectedDevice.IsLive}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="9" Height="9" Fill="{StaticResource DangerBrush}" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding SelectedDevice.RecordButtonText}" Margin="8,0,0,0" />
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Style="{StaticResource GhostButton}" Padding="14,8" Margin="8,0,0,0"
+                                            Command="{Binding SelectedDevice.SaveSnapshotCommand}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE722;" Style="{StaticResource Glyph}" FontSize="13" />
+                                            <TextBlock Text="Captura" Margin="8,0,0,0" />
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Style="{StaticResource IconButton}" Margin="8,0,0,0" ToolTip="Abrir carpeta de grabaciones"
+                                            Command="{Binding SelectedDevice.OpenRecordingsFolderCommand}">
+                                        <TextBlock Text="&#xE8B7;" FontFamily="{StaticResource IconFont}" FontSize="14" />
+                                    </Button>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding SelectedDevice.StreamStats}" Style="{StaticResource MutedCaption}" />
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+
+                        <!-- Right panel -->
+                        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                      Padding="0,0,6,0">
+                            <StackPanel>
+                                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <TextBlock Text="Controles" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
+
+                                        <Border Background="{StaticResource DangerSoftBrush}" BorderBrush="#FF5A2A31"
+                                                BorderThickness="1" CornerRadius="9" Padding="10,8" Margin="0,0,0,10"
+                                                Visibility="{Binding SelectedDevice.ActionError, Converter={StaticResource StringToVis}}">
+                                            <Grid>
+                                                <TextBlock Text="{Binding SelectedDevice.ActionError}" Foreground="#FFFCA5A5"
+                                                           FontSize="11.5" TextWrapping="Wrap" Margin="0,0,22,0" />
+                                                <Button HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                        Style="{StaticResource IconButton}" Width="22" Height="22"
+                                                        Command="{Binding SelectedDevice.DismissErrorCommand}">
+                                                    <TextBlock Text="&#xE8BB;" FontFamily="{StaticResource IconFont}" FontSize="9" />
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+
+                                        <Border Background="#FF2A2113" BorderBrush="#FF5C4A1C" BorderThickness="1"
+                                                CornerRadius="9" Padding="10,8" Margin="0,0,0,10"
+                                                Visibility="{Binding SelectedDevice.LiveViewDisabled, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="La vista en vivo está desactivada para esta cámara en la app de Ring."
+                                                       Foreground="#FFFDE68A" FontSize="11.5" TextWrapping="Wrap" />
+                                        </Border>
+
+                                        <Grid Margin="0,4,0,4" Visibility="{Binding SelectedDevice.HasLight, Converter={StaticResource BoolToVis}}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="32" Height="32" CornerRadius="9" Background="#FF1B2430">
+                                                <TextBlock Text="&#xE706;" Style="{StaticResource Glyph}" FontSize="14"
+                                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Margin="10,0,8,0" VerticalAlignment="Center">
+                                                <TextBlock Text="Luz" FontSize="13" />
+                                                <TextBlock Text="Foco del dispositivo" Style="{StaticResource MutedCaption}" Margin="0,1,0,0" />
+                                            </StackPanel>
+                                            <ToggleButton Grid.Column="2" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center"
+                                                          IsChecked="{Binding SelectedDevice.LightOn, Mode=OneWay}"
+                                                          Command="{Binding SelectedDevice.ToggleLightCommand}" />
+                                        </Grid>
+
+                                        <Grid Margin="0,4,0,4" Visibility="{Binding SelectedDevice.HasSiren, Converter={StaticResource BoolToVis}}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="32" Height="32" CornerRadius="9" Background="#FF1B2430">
+                                                <TextBlock Text="&#xE7BA;" Style="{StaticResource Glyph}" FontSize="14"
+                                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Margin="10,0,8,0" VerticalAlignment="Center">
+                                                <TextBlock Text="Sirena" FontSize="13" />
+                                                <TextBlock Text="Alarma sonora" Style="{StaticResource MutedCaption}" Margin="0,1,0,0" />
+                                            </StackPanel>
+                                            <ToggleButton Grid.Column="2" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center"
+                                                          IsChecked="{Binding SelectedDevice.SirenOn, Mode=OneWay}"
+                                                          Command="{Binding SelectedDevice.ToggleSirenCommand}" />
+                                        </Grid>
+
+                                        <Grid Margin="0,4,0,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="32" Height="32" CornerRadius="9" Background="#FF1B2430">
+                                                <TextBlock Text="&#xE7F4;" Style="{StaticResource Glyph}" FontSize="14"
+                                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Margin="10,0,8,0" VerticalAlignment="Center">
+                                                <TextBlock Text="Movimiento" FontSize="13" />
+                                                <TextBlock Text="Detección de movimiento" Style="{StaticResource MutedCaption}" Margin="0,1,0,0" />
+                                            </StackPanel>
+                                            <ToggleButton Grid.Column="2" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center"
+                                                          IsChecked="{Binding SelectedDevice.MotionOn, Mode=OneWay}"
+                                                          Command="{Binding SelectedDevice.ToggleMotionCommand}" />
+                                        </Grid>
+
+                                        <Grid Margin="0,4,0,0" Visibility="{Binding SelectedDevice.HasChime, Converter={StaticResource BoolToVis}}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="32" Height="32" CornerRadius="9" Background="#FF1B2430">
+                                                <TextBlock Text="&#xE7ED;" Style="{StaticResource Glyph}" FontSize="14"
+                                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Margin="10,0,8,0" VerticalAlignment="Center">
+                                                <TextBlock Text="Timbre" FontSize="13" />
+                                                <TextBlock Text="Sonido del timbre" Style="{StaticResource MutedCaption}" Margin="0,1,0,0" />
+                                            </StackPanel>
+                                            <ToggleButton Grid.Column="2" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center"
+                                                          IsChecked="{Binding SelectedDevice.ChimeOn, Mode=OneWay}"
+                                                          Command="{Binding SelectedDevice.ToggleChimeCommand}" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <Grid Margin="0,0,0,10">
+                                            <TextBlock Text="Estado del dispositivo" Style="{StaticResource SectionTitle}" />
+                                            <TextBlock Text="Actualizando…" Style="{StaticResource MutedCaption}"
+                                                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                       Visibility="{Binding SelectedDevice.IsBusy, Converter={StaticResource BoolToVis}}" />
+                                        </Grid>
+
+                                        <Border Style="{StaticResource SoftCard}" Margin="0,0,0,8"
+                                                Visibility="{Binding SelectedDevice.HasAddress, Converter={StaticResource BoolToVis}}">
+                                            <StackPanel>
+                                                <TextBlock Text="Dirección" Style="{StaticResource MutedCaption}" />
+                                                <TextBlock Text="{Binding SelectedDevice.Address}" FontSize="12.5"
+                                                           TextWrapping="Wrap" Margin="0,3,0,0" />
+                                            </StackPanel>
+                                        </Border>
+
+                                        <ItemsControl ItemsSource="{Binding SelectedDevice.HealthItems}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="0,5">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="{Binding Label}" Style="{StaticResource Caption}"
+                                                                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="12.5"
+                                                                   FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                                                   MaxWidth="160" Margin="10,0,0,0" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                                    <StackPanel>
+                                        <Grid Margin="0,0,0,10">
+                                            <TextBlock Text="Grabador NVR" Style="{StaticResource SectionTitle}" />
+                                            <Border HorizontalAlignment="Right" VerticalAlignment="Center" Background="#FF10161D"
+                                                    CornerRadius="6" Padding="7,2">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Ellipse Width="6" Height="6" VerticalAlignment="Center" Margin="0,0,6,0">
+                                                        <Ellipse.Style>
+                                                            <Style TargetType="Ellipse">
+                                                                <Setter Property="Fill" Value="{StaticResource TextMutedBrush}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Nvr.IsRunning}" Value="True">
+                                                                        <Setter Property="Fill" Value="{StaticResource DangerBrush}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Ellipse.Style>
+                                                    </Ellipse>
+                                                    <TextBlock Text="{Binding Nvr.StatusLabel}" FontSize="10.5"
+                                                               Foreground="{StaticResource TextSecondaryBrush}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+
+                                        <ListBox ItemsSource="{Binding Nvr.Modes}" SelectedItem="{Binding Nvr.SelectedMode}"
+                                                 Background="Transparent" BorderThickness="0" FocusVisualStyle="{x:Null}"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                 ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                                            <ListBox.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel Orientation="Horizontal" />
+                                                </ItemsPanelTemplate>
+                                            </ListBox.ItemsPanel>
+                                            <ListBox.ItemContainerStyle>
+                                                <Style TargetType="ListBoxItem">
+                                                    <Setter Property="Cursor" Value="Hand" />
+                                                    <Setter Property="Margin" Value="0,0,6,0" />
+                                                    <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="ListBoxItem">
+                                                                <Border x:Name="Bd" Background="{StaticResource SurfaceAltBrush}"
+                                                                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                                                        CornerRadius="6" Padding="9,5">
+                                                                    <ContentPresenter />
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="Bd" Property="Background" Value="{StaticResource SurfaceHoverBrush}" />
+                                                                    </Trigger>
+                                                                    <Trigger Property="IsSelected" Value="True">
+                                                                        <Setter TargetName="Bd" Property="Background" Value="{StaticResource AccentSoftBrush}" />
+                                                                        <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                                                        <Setter Property="Foreground" Value="{StaticResource AccentHoverBrush}" />
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </ListBox.ItemContainerStyle>
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Label}" FontSize="11.5" />
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+
+                                        <Button Style="{StaticResource PrimaryButton}" Margin="0,10,0,0" Padding="14,8"
+                                                Content="{Binding Nvr.ToggleButtonText}" Command="{Binding Nvr.ToggleCommand}"
+                                                IsEnabled="{Binding Nvr.IsBusy, Converter={StaticResource InverseBool}}" />
+
+                                        <Border Background="{StaticResource DangerSoftBrush}" BorderBrush="#FF5A2A31" BorderThickness="1"
+                                                CornerRadius="9" Padding="10,8" Margin="0,10,0,0"
+                                                Visibility="{Binding Nvr.ErrorMessage, Converter={StaticResource StringToVis}}">
+                                            <Grid>
+                                                <TextBlock Text="{Binding Nvr.ErrorMessage}" Foreground="#FFFCA5A5" FontSize="11.5"
+                                                           TextWrapping="Wrap" Margin="0,0,22,0" />
+                                                <Button HorizontalAlignment="Right" VerticalAlignment="Top" Style="{StaticResource IconButton}"
+                                                        Width="22" Height="22"
+                                                        Command="{Binding Nvr.DismissErrorCommand}">
+                                                    <TextBlock Text="&#xE8BB;" FontFamily="{StaticResource IconFont}" FontSize="9" />
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+
+                                        <Border Background="#FF2A2113" BorderBrush="#FF5C4A1C" BorderThickness="1" CornerRadius="9"
+                                                Padding="10,8" Margin="0,10,0,0"
+                                                Visibility="{Binding Nvr.HasExternalDaemon, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="{Binding Nvr.ExternalDaemonText}" Foreground="#FFFDE68A" FontSize="11.5"
+                                                       TextWrapping="Wrap" />
+                                        </Border>
+
+                                        <Grid Margin="0,12,0,0">
+                                            <TextBlock Text="Carpeta" Style="{StaticResource Caption}" VerticalAlignment="Center" />
+                                            <Button HorizontalAlignment="Right" Style="{StaticResource SmallButton}" Content="Abrir"
+                                                    Command="{Binding Nvr.OpenFolderCommand}" />
+                                        </Grid>
+                                        <TextBlock Text="{Binding Nvr.FolderLabel}" Style="{StaticResource MutedCaption}"
+                                                   TextTrimming="CharacterEllipsis" ToolTip="{Binding Nvr.FolderLabel}" Margin="0,3,0,0" />
+
+                                        <Grid Margin="0,9,0,0">
+                                            <TextBlock Text="Grabaciones" Style="{StaticResource Caption}" />
+                                            <TextBlock Text="{Binding Nvr.UsageLabel}" HorizontalAlignment="Right" FontSize="12"
+                                                       FontWeight="SemiBold" />
+                                        </Grid>
+                                        <Grid Margin="0,6,0,0">
+                                            <TextBlock Text="Espacio libre" Style="{StaticResource Caption}" />
+                                            <TextBlock Text="{Binding Nvr.FreeLabel}" HorizontalAlignment="Right" FontSize="12"
+                                                       FontWeight="SemiBold" />
+                                        </Grid>
+                                        <Grid Margin="0,6,0,0">
+                                            <TextBlock Text="Retención" Style="{StaticResource Caption}" />
+                                            <TextBlock Text="{Binding Nvr.RetentionLabel}" HorizontalAlignment="Right" FontSize="12"
+                                                       FontWeight="SemiBold" MaxWidth="190" TextTrimming="CharacterEllipsis" />
+                                        </Grid>
+                                        <Grid Margin="0,6,0,0">
+                                            <TextBlock Text="Cámaras" Style="{StaticResource Caption}" />
+                                        </Grid>
+                                        <TextBlock Text="{Binding Nvr.DeviceStatusLabel}" Style="{StaticResource MutedCaption}"
+                                                   Margin="0,2,0,0" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!-- Library: Ring events + local NVR recordings -->
+                    <Border Grid.Row="2" Style="{StaticResource Card}" Margin="24,14,24,0" Padding="18,12">
+                        <TabControl Style="{StaticResource DarkTabControl}">
+                            <TabItem Header="Eventos recientes" Style="{StaticResource DarkTabItem}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+
+                                    <Grid>
+                                        <TextBlock Text="{Binding SelectedDevice.EventCountLabel}" Style="{StaticResource MutedCaption}"
+                                                   VerticalAlignment="Center" />
+                                        <Button HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource SmallButton}"
+                                                Content="Actualizar" Command="{Binding SelectedDevice.RefreshCommand}" />
+                                    </Grid>
+
+                                    <ListBox Grid.Row="1" Margin="0,6,0,0" ItemsSource="{Binding SelectedDevice.Events}"
+                                             Style="{StaticResource CleanListBox}" ItemContainerStyle="{StaticResource CleanListItem}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="4,5">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <Border Width="112" Height="63" CornerRadius="8" Background="#FF0B0F14" ClipToBounds="True">
+                                                        <Grid>
+                                                            <Image Source="{Binding Thumbnail}" Stretch="UniformToFill" />
+                                                            <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="20"
+                                                                       Foreground="#FF7F8EA3"
+                                                                       Visibility="{Binding Thumbnail, Converter={StaticResource NullToVisInverse}}" />
+                                                            <Border Background="#CC0B0F14" CornerRadius="4" Padding="5,1"
+                                                                    HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="4"
+                                                                    Visibility="{Binding DurationLabel, Converter={StaticResource StringToVis}}">
+                                                                <TextBlock Text="{Binding DurationLabel}" FontSize="10" />
+                                                            </Border>
+                                                            <Border Background="#CC173A2A" CornerRadius="4" Padding="5,1"
+                                                                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4"
+                                                                    Visibility="{Binding PersonDetected, Converter={StaticResource BoolToVis}}">
+                                                                <TextBlock Text="Persona" FontSize="9.5" Foreground="#FF86EFAC" />
+                                                            </Border>
+                                                        </Grid>
+                                                    </Border>
+
+                                                    <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding KindLabel}" FontSize="13" FontWeight="SemiBold" />
+                                                        <TextBlock Text="{Binding TimeLabel}" Style="{StaticResource Caption}" Margin="0,4,0,0" />
+                                                        <TextBlock Text="{Binding Status}" Style="{StaticResource MutedCaption}" Margin="0,3,0,0"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   Visibility="{Binding Status, Converter={StaticResource StringToVis}}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <Button Style="{StaticResource SmallButton}" Content="Ver" Command="{Binding PlayCommand}" />
+                                                        <Button Style="{StaticResource SmallButton}" Content="Guardar" Margin="6,0,0,0"
+                                                                Command="{Binding SaveCommand}" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+
+                                    <TextBlock Grid.Row="1" Text="No hay eventos recientes para este dispositivo."
+                                               Style="{StaticResource MutedCaption}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               Visibility="{Binding SelectedDevice.HasEvents, Converter={StaticResource InverseBoolToVis}}" />
+                                </Grid>
+                            </TabItem>
+
+                            <TabItem Header="Grabaciones NVR" Style="{StaticResource DarkTabItem}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+
+                                    <Grid>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Nvr.ClipsLabel}" Style="{StaticResource MutedCaption}" />
+                                            <TextBlock Text="·" Style="{StaticResource MutedCaption}" Margin="8,0" />
+                                            <TextBlock Text="{Binding Nvr.UsageLabel}" Style="{StaticResource MutedCaption}" />
+                                        </StackPanel>
+
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                            <Button Style="{StaticResource SmallButton}" Content="Aplicar retención"
+                                                    Command="{Binding Nvr.EnforceRetentionCommand}"
+                                                    IsEnabled="{Binding Nvr.IsBusy, Converter={StaticResource InverseBool}}" />
+                                            <Button Style="{StaticResource SmallButton}" Content="Abrir carpeta" Margin="6,0,0,0"
+                                                    Command="{Binding Nvr.OpenFolderCommand}" />
+                                            <Button Style="{StaticResource SmallButton}" Content="Actualizar" Margin="6,0,0,0"
+                                                    Command="{Binding Nvr.RefreshCommand}" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <ListBox Grid.Row="1" Margin="0,6,0,0" ItemsSource="{Binding Nvr.Clips}"
+                                             Style="{StaticResource CleanListBox}" ItemContainerStyle="{StaticResource CleanListItem}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="4,4">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <Border Width="86" Height="50" CornerRadius="8" Background="#FF0B0F14">
+                                                        <Grid>
+                                                            <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="17"
+                                                                       Foreground="#FF7F8EA3" HorizontalAlignment="Center"
+                                                                       VerticalAlignment="Center" />
+                                                            <Border Background="#CC2A2113" CornerRadius="4" Padding="4,1"
+                                                                    HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="4"
+                                                                    Visibility="{Binding IsIncomplete, Converter={StaticResource BoolToVis}}">
+                                                                <TextBlock Text="Incompleto" FontSize="9" Foreground="#FFFDE68A" />
+                                                            </Border>
+                                                        </Grid>
+                                                    </Border>
+
+                                                    <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding DeviceName}" FontSize="13" FontWeight="SemiBold"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Text="{Binding TimeLabel}" Style="{StaticResource Caption}" Margin="0,3,0,0" />
+                                                        <TextBlock Text="{Binding DetailLabel}" Style="{StaticResource MutedCaption}" Margin="0,2,0,0" />
+                                                    </StackPanel>
+
+                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <Border Background="#FF18202A" CornerRadius="5" Padding="7,3" Margin="0,0,8,0"
+                                                                VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding TriggerLabel}" FontSize="10.5"
+                                                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                                                        </Border>
+                                                        <Button Style="{StaticResource SmallButton}" Content="Ver" Command="{Binding PlayCommand}" />
+                                                        <Button Style="{StaticResource SmallButton}" Content="Carpeta" Margin="6,0,0,0"
+                                                                Command="{Binding OpenFolderCommand}" />
+                                                        <Button Style="{StaticResource SmallButton}" Content="Eliminar" Margin="6,0,0,0"
+                                                                Command="{Binding DeleteCommand}" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+
+                                    <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                Visibility="{Binding Nvr.HasClips, Converter={StaticResource InverseBoolToVis}}">
+                                        <TextBlock Text="Todavía no hay grabaciones locales." Style="{StaticResource Caption}"
+                                                   HorizontalAlignment="Center" />
+                                        <TextBlock Text="Inicia el NVR para grabar eventos o de forma continua."
+                                                   Style="{StaticResource MutedCaption}" Margin="0,4,0,0"
+                                                   HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                </Grid>
+                            </TabItem>
+                        </TabControl>
+                    </Border>
+
+                    <!-- Status bar -->
+                    <Border Grid.Row="3" Height="32" Background="#FF0C1015" BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="0,1,0,0">
+                        <Grid Margin="24,0">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Ellipse Width="6" Height="6" Fill="{StaticResource SuccessBrush}" Margin="0,0,8,0" />
+                                <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource MutedCaption}"
+                                           TextTrimming="CharacterEllipsis" MaxWidth="640" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,14,0"
+                                            Visibility="{Binding SelectedDevice.IsRecording, Converter={StaticResource BoolToVis}}">
+                                    <Ellipse Width="7" Height="7" Fill="{StaticResource DangerBrush}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBlock Text="{Binding SelectedDevice.RecordingInfo, StringFormat=REC {0}}"
+                                               FontSize="11" Foreground="#FFFCA5A5" VerticalAlignment="Center" />
+                                </StackPanel>
+                                <TextBlock Text="Convirtiendo…" Style="{StaticResource MutedCaption}" Margin="0,0,14,0"
+                                           Visibility="{Binding SelectedDevice.IsConverting, Converter={StaticResource BoolToVis}}" />
+                                <TextBlock Text="Ring Control" Style="{StaticResource MutedCaption}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Loading / empty overlays -->
+                    <Border Grid.Row="0" Grid.RowSpan="4" Background="{StaticResource AppBackgroundBrush}"
+                            Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="Cargando dispositivos…" FontSize="15" Foreground="{StaticResource TextSecondaryBrush}"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="Conectando con Ring" Style="{StaticResource MutedCaption}"
+                                       HorizontalAlignment="Center" Margin="0,6,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="0" Grid.RowSpan="4" Background="{StaticResource AppBackgroundBrush}"
+                            Visibility="{Binding ShowEmptyState, Converter={StaticResource BoolToVis}}">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420">
+                            <Border Width="58" Height="58" CornerRadius="18" Background="{StaticResource SurfaceBrush}"
+                                    HorizontalAlignment="Center">
+                                <TextBlock Text="&#xE7ED;" Style="{StaticResource Glyph}" FontSize="26"
+                                           Foreground="{StaticResource TextMutedBrush}" />
+                            </Border>
+                            <TextBlock Text="No hay dispositivos" FontSize="18" FontWeight="SemiBold"
+                                       HorizontalAlignment="Center" Margin="0,16,0,0" />
+                            <TextBlock Text="{Binding ErrorMessage}" Style="{StaticResource Caption}" TextAlignment="Center"
+                                       TextWrapping="Wrap" Margin="0,8,0,0"
+                                       Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVis}}" />
+                            <Button Content="Reintentar" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Center"
+                                    Margin="0,18,0,0" Command="{Binding LoadDevicesCommand}" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

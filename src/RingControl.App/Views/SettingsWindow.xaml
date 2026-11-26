@@ -1,0 +1,91 @@
+<Window x:Class="RingControl.App.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Ajustes · Ring Control"
+        Width="640" Height="640"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        FontFamily="{StaticResource UiFont}" UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display" KeyDown="OnKeyDown">
+
+    <Border Margin="18" CornerRadius="16" Background="{StaticResource SurfaceBrush}"
+            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="26" ShadowDepth="0" Opacity="0.5" Color="Black" />
+        </Border.Effect>
+
+        <Grid Margin="24,18,24,22">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="OnDrag" Margin="0,0,0,18">
+                <StackPanel>
+                    <TextBlock Text="Ajustes" FontFamily="{StaticResource DisplayFont}" FontSize="22" FontWeight="SemiBold" />
+                    <TextBlock Text="Preferencias de grabación y actualización" Style="{StaticResource Caption}" Margin="0,4,0,0" />
+                </StackPanel>
+                <Button HorizontalAlignment="Right" VerticalAlignment="Top" Style="{StaticResource IconButton}"
+                        Click="OnClose" ToolTip="Cerrar">
+                    <TextBlock Text="&#xE8BB;" FontFamily="{StaticResource IconFont}" FontSize="14" />
+                </Button>
+            </Grid>
+
+            <StackPanel Grid.Row="1">
+                <TextBlock Text="Carpeta de grabaciones" Style="{StaticResource SectionTitle}" />
+                <TextBlock Text="Aquí se guardan los vídeos grabados y las descargas de eventos."
+                           Style="{StaticResource MutedCaption}" Margin="0,3,0,8" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="FolderBox" Style="{StaticResource ModernTextBox}" FontSize="12.5" />
+                    <Button Grid.Column="1" Content="Examinar" Style="{StaticResource SecondaryButton}"
+                            Padding="12,9" Margin="8,0,0,0" Click="Browse_Click" />
+                </Grid>
+
+                <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,22,0,18" />
+
+                <CheckBox x:Name="AutoStartCheck" Style="{StaticResource ModernCheckBox}"
+                          Content="Iniciar el vídeo en directo al seleccionar una cámara" />
+                <TextBlock Text="Ring limita las sesiones simultáneas; actívalo solo si sueles usar el vídeo en directo."
+                           Style="{StaticResource MutedCaption}" Margin="27,6,0,0" TextWrapping="Wrap" />
+
+                <CheckBox x:Name="NvrAutoStartCheck" Style="{StaticResource ModernCheckBox}" Margin="0,14,0,0"
+                          Content="Activar el NVR al abrir RingControl" />
+                <TextBlock Text="Graba en segundo plano mientras la aplicación está abierta. Para grabar sin abrir la ventana, activa el inicio automático del NVR en el instalador o usa el servicio de Linux."
+                           Style="{StaticResource MutedCaption}" Margin="27,6,0,0" TextWrapping="Wrap" />
+
+                <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,22,0,18" />
+
+                <Grid>
+                    <TextBlock Text="Actualizar la instantánea cada" Style="{StaticResource SectionTitle}" />
+                    <TextBlock x:Name="IntervalText" Text="30 s" HorizontalAlignment="Right"
+                               FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource AccentHoverBrush}" />
+                </Grid>
+                <Slider x:Name="IntervalSlider" Style="{StaticResource ModernSlider}" Minimum="10" Maximum="180"
+                        SmallChange="5" LargeChange="10" TickFrequency="5" Margin="0,10,0,0" />
+                <TextBlock Text="Forzar instantáneas con demasiada frecuencia reduce la batería de las cámaras inalámbricas."
+                           Style="{StaticResource MutedCaption}" Margin="0,8,0,0" TextWrapping="Wrap" />
+
+                <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,22,0,18" />
+
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE946;" Style="{StaticResource Glyph}" FontSize="13"
+                               Foreground="{StaticResource TextMutedBrush}" Margin="0,1,8,0" />
+                    <TextBlock Text="Ring Control usa la API privada de Ring. Si Ring cambia sus servicios, alguna función puede dejar de estar disponible."
+                               Style="{StaticResource MutedCaption}" TextWrapping="Wrap" MaxWidth="470" LineHeight="17" />
+                </StackPanel>
+            </StackPanel>
+
+            <Grid Grid.Row="2" Margin="0,22,0,0">
+                <Button Content="Cancelar" Style="{StaticResource GhostButton}" HorizontalAlignment="Left"
+                        Padding="18,9" Click="OnClose" />
+                <Button Content="Guardar cambios" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Right"
+                        Padding="20,9" Click="Save_Click" IsDefault="True" />
+            </Grid>
+        </Grid>
+    </Border>
+</Window>
